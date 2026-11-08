@@ -1,7 +1,7 @@
 {
   "name": "@polycanal/nest",
   "version": "0.0.0",
-  "description": "Polycanal NestJS adapter: route discovery, schema attachment decorators, contract generation",
+  "description": "Polycanal NestJS adapter: route discovery, schema attachment decorators, response validation, contract generation",
   "license": "MIT",
   "type": "module",
   "repository": {
@@ -38,7 +38,8 @@
   "peerDependencies": {
     "@nestjs/common": ">=11.0.0",
     "@nestjs/core": ">=11.0.0",
-    "reflect-metadata": ">=0.2.0"
+    "reflect-metadata": ">=0.2.0",
+    "rxjs": ">=7.1.0"
   },
   "devDependencies": {
     "@nestjs/common": "12.1.3",

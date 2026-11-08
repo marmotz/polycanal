@@ -7,13 +7,17 @@ const output = z.string();
 
 class BaseController {
   @Endpoint({ output })
-  list() {}
+  list() {
+    return 'list';
+  }
 }
 
 @EndpointNamespace('admin')
 class ChildController extends BaseController {
   @Endpoint({ name: 'details', output })
-  get() {}
+  get() {
+    return 'details';
+  }
 }
 
 class PlainController {

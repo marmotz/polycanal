@@ -1,4 +1,5 @@
 import type { FieldDescriptor, OperationMeta, StandardSchemaV1 } from '@polycanal/core';
+import { checkResponses, type RequestLike, type ResponseLike } from './output.js';
 
 /** Input of an endpoint: a field map (like `input()`), or an object schema spread with the default rules. */
 export type EndpointInput = Readonly<Record<string, StandardSchemaV1 | FieldDescriptor>> | StandardSchemaV1;
@@ -22,8 +23,9 @@ const ENDPOINT = Symbol.for('polycanal.express.endpoint');
 type Middleware = (request: unknown, response: unknown, next: () => void) => void;
 
 /**
- * Marks an Express route as part of the contract and attaches its schemas. It is a no-op middleware, so it works with
- * plain Express and with decorator libraries that accept middlewares.
+ * Marks an Express route as part of the contract and attaches its schemas. It is a middleware, so it works with plain
+ * Express and with decorator libraries that accept middlewares. It only calls `next()`, unless the application
+ * validates its responses (`validateResponses(app)`): it then checks what the route answers with `res.json()`.
  *
  * @example
  * app.post('/auth/login', endpoint({ input: LoginSchema, output: SessionSchema }), login);
@@ -34,7 +36,10 @@ type Middleware = (request: unknown, response: unknown, next: () => void) => voi
  * login(@Body() body: Login) {}
  */
 export function endpoint(options: EndpointOptions): Middleware {
-  const middleware: Middleware = (_request, _response, next) => next();
+  const middleware: Middleware = (request, response, next) => {
+    checkResponses(options.output, request as RequestLike, response as ResponseLike);
+    next();
+  };
   (middleware as unknown as Record<symbol, EndpointOptions>)[ENDPOINT] = options;
 
   return middleware;

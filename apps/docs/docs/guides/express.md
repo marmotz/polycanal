@@ -58,6 +58,20 @@ export class HouseholdsRouter {
 | `name`, `namespace` | Location in the contract. Default name: from the method and the path (`getHouseholdsById`) |
 | `meta`              | Free description                                                                       |
 
+## Checking responses
+
+`validateResponses(app)` makes every `endpoint()` route validate what it answers with `res.json()` (or `res.send()` of
+an object) before it leaves, as the client will read it (after JSON):
+
+```ts
+import { validateResponses } from '@polycanal/express';
+
+validateResponses(app, { onInvalid: process.env.NODE_ENV === 'production' ? 'log' : 'throw' });
+```
+
+`onInvalid` is `'throw'` (default: logged and replaced by a 500 error), `'log'` (logged and sent anyway) or a function
+called with `{ route, issues, value }` before the response is sent.
+
 ## Generating
 
 ```ts title="scripts/generate-contract.ts"

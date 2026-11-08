@@ -31,12 +31,37 @@ export class LoginController {
 
 | `@Endpoint()` option | Role                                                                                 |
 |----------------------|--------------------------------------------------------------------------------------|
-| `output`             | Response schema. Required unless `outputOf` finds one                                |
+| `output`             | Response schema. Required unless `outputOf` finds one. TypeScript checks the handler's return type against it |
 | `errors`             | Error body schemas by HTTP status                                                    |
 | `input`              | Fields to add or replace (`{ page: z.coerce.number() }`), as in `input()`; a root field replaces the fields discovered in its source |
 | `name`               | Operation name. Default: the handler name                                            |
 | `namespace`          | Namespace. Default: `@EndpointNamespace()` or the static segments of the controller path |
 | `meta`               | Free description                                                                     |
+
+## Checking responses
+
+With an `output`, TypeScript refuses a handler whose return type does not match the input type of the schema (a `Date`
+is accepted where JSON carries a string). A handler answering through `@Res()` returns nothing: it needs a
+`// @ts-expect-error` or no `output`.
+
+At runtime, `EndpointOutputInterceptor` validates what each `@Endpoint()` handler answers before it leaves, as the
+client will read it (after JSON):
+
+```ts
+import { EndpointOutputInterceptor } from '@polycanal/nest';
+
+app.useGlobalInterceptors(
+  new EndpointOutputInterceptor({ onInvalid: process.env.NODE_ENV === 'production' ? 'log' : 'throw' }),
+);
+```
+
+| `onInvalid`        | A response that does not match                                         |
+|--------------------|------------------------------------------------------------------------|
+| `'throw'` (default) | Logged and replaced by a 500 error: tests and development catch it    |
+| `'log'`            | Logged and sent anyway                                                 |
+| function           | Called with `{ route, issues, value }`; what it throws replaces the response |
+
+Its `outputOf` option reads response schemas from a project decorator, like the discovery option.
 
 ## Generating
 

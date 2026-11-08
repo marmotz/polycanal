@@ -32,12 +32,37 @@ export class LoginController {
 
 | Option de `@Endpoint()` | Rôle                                                                                   |
 |-------------------------|----------------------------------------------------------------------------------------|
-| `output`                | Schéma de la réponse. Obligatoire, sauf si `outputOf` en trouve un                     |
+| `output`                | Schéma de la réponse. Obligatoire, sauf si `outputOf` en trouve un. TypeScript vérifie le type de retour du handler par rapport à lui |
 | `errors`                | Schémas des corps d'erreur, par statut HTTP                                            |
 | `input`                 | Champs à ajouter ou remplacer (`{ page: z.coerce.number() }`), comme dans `input()` ; un champ racine remplace les champs découverts dans sa source |
 | `name`                  | Nom de l'opération. Par défaut : le nom du handler                                     |
 | `namespace`             | Namespace. Par défaut : `@EndpointNamespace()` ou les segments fixes du chemin du controller |
 | `meta`                  | Description libre                                                                      |
+
+## Vérifier les réponses
+
+Avec un `output`, TypeScript refuse un handler dont le type de retour ne correspond pas au type d'entrée du schéma (une
+`Date` est acceptée là où JSON transporte une chaîne). Un handler qui répond par `@Res()` ne retourne rien : il lui faut
+un `// @ts-expect-error` ou pas d'`output`.
+
+À l'exécution, `EndpointOutputInterceptor` valide ce que répond chaque handler `@Endpoint()` avant que la réponse parte,
+telle que le client la lira (après JSON) :
+
+```ts
+import { EndpointOutputInterceptor } from '@polycanal/nest';
+
+app.useGlobalInterceptors(
+  new EndpointOutputInterceptor({ onInvalid: process.env.NODE_ENV === 'production' ? 'log' : 'throw' }),
+);
+```
+
+| `onInvalid`          | Une réponse qui ne correspond pas                                            |
+|----------------------|------------------------------------------------------------------------------|
+| `'throw'` (défaut)   | Journalisée et remplacée par une erreur 500 : les tests et le dev la voient  |
+| `'log'`              | Journalisée et envoyée quand même                                            |
+| fonction             | Appelée avec `{ route, issues, value }` ; ce qu'elle lève remplace la réponse |
+
+Son option `outputOf` lit les schémas de réponse depuis un décorateur du projet, comme l'option de découverte.
 
 ## Générer
 

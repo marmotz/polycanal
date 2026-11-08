@@ -199,9 +199,7 @@ describe('discoverNestContract()', () => {
     class NotesController {
       @Post()
       @Endpoint({ output: z.void(), input: { body: { source: 'body', root: true, schema: BodySchema } } })
-      create(@Body(new ZodValidationPipe(BodySchema)) body: unknown) {
-        return body;
-      }
+      create(@Body(new ZodValidationPipe(BodySchema)) _body: unknown) {}
     }
 
     const moduleRef = await Test.createTestingModule({ controllers: [NotesController] }).compile();
@@ -268,7 +266,7 @@ describe('discoverNestContract()', () => {
     class NotesController {
       @Post()
       @Endpoint({ output: NoteSchema, input: { body: { source: 'body', root: true, schema: NoteSchema } } })
-      create(@Body(new ZodValidationPipe(z.preprocess((body) => body ?? {}, NoteSchema))) body: unknown) {
+      create(@Body(new ZodValidationPipe(z.preprocess((body) => body ?? {}, NoteSchema))) body: { name: string }) {
         return body;
       }
     }
