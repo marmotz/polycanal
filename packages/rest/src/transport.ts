@@ -33,7 +33,7 @@ export function restTransport(
           codec: codecOf(call.operation.codec),
           headers: typeof options.headers === 'function' ? options.headers() : (options.headers ?? {}),
         }),
-      send: async (request, call) => decode(await send(request, call.signal), codecOf(call.operation.codec)),
+      send: async (request, call) => decode(await send(request, call.signal, call), codecOf(call.operation.codec)),
       read: (response, call) => {
         const binding = call.operation.transport;
         const status = isRestBinding(binding) ? binding.status : undefined;
@@ -49,6 +49,10 @@ export function restTransport(
 }
 
 function decode(response: RawHttpResponse, codec: Codec): HttpResponse {
+  if ('body' in response) {
+    return { ...response, body: response.body };
+  }
+
   if (response.text.trim() === '') {
     return { ...response, body: undefined };
   }

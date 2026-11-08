@@ -1,3 +1,5 @@
+import type { ActionCall } from '@polycanal/core';
+
 /** Native request of the REST driver, as seen and changed by interceptors. */
 export interface HttpRequest {
   readonly method: string;
@@ -15,6 +17,11 @@ export interface RawHttpResponse {
   /** Header names are lowercase. */
   readonly headers: Readonly<Record<string, string>>;
   readonly text: string;
+  /**
+   * Body the sender already decoded, when its HTTP client parses JSON itself (Angular `HttpClient`). When the key is
+   * present, the codec is skipped.
+   */
+  readonly body?: unknown;
 }
 
 /** Native response of the REST driver, as seen and changed by interceptors. */
@@ -26,8 +33,15 @@ export interface HttpResponse extends RawHttpResponse {
   readonly body: unknown;
 }
 
-/** Sends an HTTP request: the only part that differs between `fetch`, Angular `HttpClient`, etc. */
-export type HttpSender = (request: HttpRequest, signal: AbortSignal | undefined) => Promise<RawHttpResponse>;
+/**
+ * Sends an HTTP request: the only part that differs between `fetch`, Angular `HttpClient`, etc. `call` is the action
+ * call being carried, for senders that adapt the request to the operation.
+ */
+export type HttpSender = (
+  request: HttpRequest,
+  signal: AbortSignal | undefined,
+  call: ActionCall,
+) => Promise<RawHttpResponse>;
 
 /** Returns a copy of `request` with headers added or replaced. */
 export function withHeaders(request: HttpRequest, headers: Readonly<Record<string, string>>): HttpRequest {
