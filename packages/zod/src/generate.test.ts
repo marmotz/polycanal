@@ -69,6 +69,41 @@ describe('zodDriver.generate()', () => {
     ['a record', { type: 'object', additionalProperties: { type: 'number' } }, 'z.record(z.string(), z.number())'],
     ['an empty object', { type: 'object', properties: {}, additionalProperties: false }, 'z.object({})'],
     ['a default', { type: 'integer', default: 1 }, 'z.number().int().default(1)'],
+    ['a file', { type: 'string', format: 'binary', contentEncoding: 'binary' }, 'z.file()'],
+    ['an OpenAPI 3.0 file', { type: 'string', format: 'binary' }, 'z.file()'],
+    [
+      'a bounded file',
+      { type: 'string', format: 'binary', minLength: 1, maxLength: 1024 },
+      'z.file().min(1).max(1024)',
+    ],
+    [
+      'a file with a direct MIME type',
+      { type: 'string', format: 'binary', contentMediaType: 'application/pdf' },
+      "z.file().mime(['application/pdf'])",
+    ],
+    [
+      'a file with MIME types in anyOf',
+      {
+        type: 'string',
+        format: 'binary',
+        maxLength: 10,
+        anyOf: [{ contentMediaType: 'image/png' }, { contentMediaType: 'image/jpeg' }],
+      },
+      "z.file().max(10).mime(['image/png', 'image/jpeg'])",
+    ],
+    ['a nullable file', { type: 'string', format: 'binary', nullable: true }, 'z.file().nullable()'],
+    ['a file in a type list', { type: ['string', 'null'], format: 'binary' }, 'z.file().nullable()'],
+    [
+      'a file in an anyOf with null',
+      { anyOf: [{ type: 'string', format: 'binary' }, { type: 'null' }] },
+      'z.file().nullable()',
+    ],
+    [
+      'a binary string with a real anyOf as a union',
+      { type: 'string', format: 'binary', anyOf: [{ minLength: 1 }, { contentMediaType: 'image/png' }] },
+      'z.union([z.unknown(), z.unknown()])',
+    ],
+    ['a byte string', { type: 'string', format: 'byte' }, 'z.string()'],
   ])('generates %s', (_, schema, expected) => {
     expect(code(schema)).toBe(expected);
   });
@@ -142,6 +177,31 @@ describe('zodDriver.generate()', () => {
     expect(generated.safeParse({ ...valid, email: 'nope' }).success).toBe(false);
     expect(generated.safeParse({ ...valid, age: 1.5 }).success).toBe(false);
     expect(generated.safeParse({ ...valid, nickname: undefined }).success).toBe(false);
+  });
+
+  it('round-trips Zod files through JSON Schema', () => {
+    const original = z.object({
+      photo: z.file().min(1).max(8).mime(['image/png', 'image/jpeg']),
+      document: z.file().mime(['application/pdf']).optional(),
+      thumbnail: z.file().nullable(),
+    });
+    const schema = toJsonSchema(original, 'input') as JsonSchema;
+    const generated = evaluate(schema);
+    const png = new File(['png'], 'photo.png', { type: 'image/png' });
+    const valid = { photo: png, thumbnail: null };
+
+    expect(code(schema)).toContain("photo: z.file().min(1).max(8).mime(['image/png', 'image/jpeg']),");
+    expect(generated.safeParse(valid).success).toBe(true);
+    expect(
+      generated.safeParse({ ...valid, document: new File(['%PDF'], 'a.pdf', { type: 'application/pdf' }) }).success,
+    ).toBe(true);
+    expect(generated.safeParse({ ...valid, photo: new File(['gif'], 'a.gif', { type: 'image/gif' }) }).success).toBe(
+      false,
+    );
+    expect(
+      generated.safeParse({ ...valid, photo: new File(['too large'], 'a.png', { type: 'image/png' }) }).success,
+    ).toBe(false);
+    expect(generated.safeParse({ ...valid, photo: 'photo.png' }).success).toBe(false);
   });
 
   it('keeps input defaults when generating from the input side', () => {

@@ -66,6 +66,13 @@ function base(schema: SchemaObject, context: SchemaGenerationContext): string {
     return enumSchema(schema.enum);
   }
 
+  // Before unions: Zod puts a file's MIME types in an `anyOf` of `contentMediaType`
+  const file = fileSchema(schema);
+
+  if (file !== undefined) {
+    return file;
+  }
+
   const variants = (schema.anyOf ?? schema.oneOf) as JsonSchema[] | undefined;
 
   if (Array.isArray(variants)) {
@@ -147,6 +154,76 @@ function stringSchema(schema: SchemaObject): string {
   }
 
   return code;
+}
+
+/**
+ * `z.file()` for a binary string (`format: binary`, with or without `contentEncoding`, OpenAPI 3.0 included), with its
+ * size bounds and MIME types, or `undefined` when the schema is not a file.
+ */
+function fileSchema(schema: SchemaObject): string | undefined {
+  const type = schema.type;
+  const types = Array.isArray(type) ? type : [type];
+  const nullable = types.includes('null');
+  const others = types.filter((name) => name !== 'null');
+
+  if (schema.format !== 'binary' || others.length !== 1 || others[0] !== 'string') {
+    return undefined;
+  }
+
+  const mimes = fileMimes(schema);
+
+  if (mimes === undefined) {
+    return undefined;
+  }
+
+  let code = 'z.file()';
+
+  if (typeof schema.minLength === 'number') {
+    code += `.min(${schema.minLength})`;
+  }
+
+  if (typeof schema.maxLength === 'number') {
+    code += `.max(${schema.maxLength})`;
+  }
+
+  if (mimes.length > 0) {
+    code += `.mime([${mimes.map(literal).join(', ')}])`;
+  }
+
+  return nullable ? `${code}.nullable()` : code;
+}
+
+/**
+ * A file's MIME types, from `contentMediaType` or an `anyOf` of `contentMediaType` variants; `undefined` when the
+ * `anyOf` (or a `oneOf`) holds anything else, so that the schema is left to the union handling.
+ */
+function fileMimes(schema: SchemaObject): readonly string[] | undefined {
+  if (schema.oneOf !== undefined) {
+    return undefined;
+  }
+
+  const mimes = typeof schema.contentMediaType === 'string' ? [schema.contentMediaType] : [];
+
+  if (schema.anyOf === undefined) {
+    return mimes;
+  }
+
+  if (!Array.isArray(schema.anyOf)) {
+    return undefined;
+  }
+
+  for (const variant of schema.anyOf as JsonSchema[]) {
+    const isMime =
+      typeof variant === 'object' && Object.keys(variant).length === 1 && typeof variant.contentMediaType === 'string';
+
+    if (!isMime) {
+      return undefined;
+    }
+
+    mimes.push(variant.contentMediaType as string);
+  }
+
+  return mimes;
 }
 
 function numberSchema(schema: SchemaObject, start: string): string {
