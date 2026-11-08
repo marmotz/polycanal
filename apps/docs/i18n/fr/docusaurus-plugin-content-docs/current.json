@@ -1,0 +1,850 @@
+{
+  "version.label": {
+    "message": "next",
+    "description": "The label for version current"
+  },
+  "sidebar.guide.category.Getting started": {
+    "message": "Prise en main",
+    "description": "The label for category 'Getting started' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.Guides": {
+    "message": "Guides",
+    "description": "The label for category 'Guides' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.Concepts": {
+    "message": "Concepts",
+    "description": "The label for category 'Concepts' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.Reference": {
+    "message": "Référence",
+    "description": "The label for category 'Reference' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.API": {
+    "message": "API",
+    "description": "The label for category 'API' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/angular": {
+    "message": "@polycanal/angular",
+    "description": "The label for category '@polycanal/angular' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/angular.Interfaces": {
+    "message": "Interfaces",
+    "description": "The label for category 'Interfaces' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/angular.Type Aliases": {
+    "message": "Type Aliases",
+    "description": "The label for category 'Type Aliases' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/angular.Functions": {
+    "message": "Functions",
+    "description": "The label for category 'Functions' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/codegen": {
+    "message": "@polycanal/codegen",
+    "description": "The label for category '@polycanal/codegen' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/codegen.Interfaces": {
+    "message": "Interfaces",
+    "description": "The label for category 'Interfaces' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/codegen.Type Aliases": {
+    "message": "Type Aliases",
+    "description": "The label for category 'Type Aliases' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/codegen.Variables": {
+    "message": "Variables",
+    "description": "The label for category 'Variables' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/codegen.Functions": {
+    "message": "Functions",
+    "description": "The label for category 'Functions' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/core": {
+    "message": "@polycanal/core",
+    "description": "The label for category '@polycanal/core' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/core.Namespaces": {
+    "message": "Namespaces",
+    "description": "The label for category 'Namespaces' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/core.Namespaces.StandardSchemaV1": {
+    "message": "StandardSchemaV1",
+    "description": "The label for category 'StandardSchemaV1' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/core.Namespaces.StandardSchemaV1.Interfaces": {
+    "message": "Interfaces",
+    "description": "The label for category 'Interfaces' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/core.Namespaces.StandardSchemaV1.Type Aliases": {
+    "message": "Type Aliases",
+    "description": "The label for category 'Type Aliases' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/core.Classes": {
+    "message": "Classes",
+    "description": "The label for category 'Classes' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/core.Interfaces": {
+    "message": "Interfaces",
+    "description": "The label for category 'Interfaces' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/core.Type Aliases": {
+    "message": "Type Aliases",
+    "description": "The label for category 'Type Aliases' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/core.Variables": {
+    "message": "Variables",
+    "description": "The label for category 'Variables' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/core.Functions": {
+    "message": "Functions",
+    "description": "The label for category 'Functions' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/express": {
+    "message": "@polycanal/express",
+    "description": "The label for category '@polycanal/express' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/express.Interfaces": {
+    "message": "Interfaces",
+    "description": "The label for category 'Interfaces' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/express.Type Aliases": {
+    "message": "Type Aliases",
+    "description": "The label for category 'Type Aliases' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/express.Functions": {
+    "message": "Functions",
+    "description": "The label for category 'Functions' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/nest": {
+    "message": "@polycanal/nest",
+    "description": "The label for category '@polycanal/nest' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/nest.Interfaces": {
+    "message": "Interfaces",
+    "description": "The label for category 'Interfaces' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/nest.Type Aliases": {
+    "message": "Type Aliases",
+    "description": "The label for category 'Type Aliases' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/nest.Functions": {
+    "message": "Functions",
+    "description": "The label for category 'Functions' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/openapi": {
+    "message": "@polycanal/openapi",
+    "description": "The label for category '@polycanal/openapi' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/openapi.Interfaces": {
+    "message": "Interfaces",
+    "description": "The label for category 'Interfaces' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/openapi.Functions": {
+    "message": "Functions",
+    "description": "The label for category 'Functions' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/rest": {
+    "message": "@polycanal/rest",
+    "description": "The label for category '@polycanal/rest' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/rest.Interfaces": {
+    "message": "Interfaces",
+    "description": "The label for category 'Interfaces' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/rest.Type Aliases": {
+    "message": "Type Aliases",
+    "description": "The label for category 'Type Aliases' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/rest.Variables": {
+    "message": "Variables",
+    "description": "The label for category 'Variables' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/rest.Functions": {
+    "message": "Functions",
+    "description": "The label for category 'Functions' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/zod": {
+    "message": "@polycanal/zod",
+    "description": "The label for category '@polycanal/zod' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/zod.Variables": {
+    "message": "Variables",
+    "description": "The label for category 'Variables' in sidebar 'guide'"
+  },
+  "sidebar.guide.category.api.@polycanal/zod.Functions": {
+    "message": "Functions",
+    "description": "The label for category 'Functions' in sidebar 'guide'"
+  },
+  "sidebar.guide.doc.api.@polycanal/angular.Interfaces.ActionResourceOptions": {
+    "message": "ActionResourceOptions",
+    "description": "The label for the doc item 'ActionResourceOptions' in sidebar 'guide', linking to the doc api/@polycanal/angular/interfaces/ActionResourceOptions"
+  },
+  "sidebar.guide.doc.api.@polycanal/angular.Interfaces.AngularRestOptions": {
+    "message": "AngularRestOptions",
+    "description": "The label for the doc item 'AngularRestOptions' in sidebar 'guide', linking to the doc api/@polycanal/angular/interfaces/AngularRestOptions"
+  },
+  "sidebar.guide.doc.api.@polycanal/angular.Type Aliases.ActionFn": {
+    "message": "ActionFn",
+    "description": "The label for the doc item 'ActionFn' in sidebar 'guide', linking to the doc api/@polycanal/angular/type-aliases/ActionFn"
+  },
+  "sidebar.guide.doc.api.@polycanal/angular.Functions.actionResource": {
+    "message": "actionResource",
+    "description": "The label for the doc item 'actionResource' in sidebar 'guide', linking to the doc api/@polycanal/angular/functions/actionResource"
+  },
+  "sidebar.guide.doc.api.@polycanal/angular.Functions.angularRest": {
+    "message": "angularRest",
+    "description": "The label for the doc item 'angularRest' in sidebar 'guide', linking to the doc api/@polycanal/angular/functions/angularRest"
+  },
+  "sidebar.guide.doc.api.@polycanal/angular.Functions.injectAngularRest": {
+    "message": "injectAngularRest",
+    "description": "The label for the doc item 'injectAngularRest' in sidebar 'guide', linking to the doc api/@polycanal/angular/functions/injectAngularRest"
+  },
+  "sidebar.guide.doc.api.@polycanal/codegen.Interfaces.ActionDescription": {
+    "message": "ActionDescription",
+    "description": "The label for the doc item 'ActionDescription' in sidebar 'guide', linking to the doc api/@polycanal/codegen/interfaces/ActionDescription"
+  },
+  "sidebar.guide.doc.api.@polycanal/codegen.Interfaces.ContractDescription": {
+    "message": "ContractDescription",
+    "description": "The label for the doc item 'ContractDescription' in sidebar 'guide', linking to the doc api/@polycanal/codegen/interfaces/ContractDescription"
+  },
+  "sidebar.guide.doc.api.@polycanal/codegen.Interfaces.EventDescription": {
+    "message": "EventDescription",
+    "description": "The label for the doc item 'EventDescription' in sidebar 'guide', linking to the doc api/@polycanal/codegen/interfaces/EventDescription"
+  },
+  "sidebar.guide.doc.api.@polycanal/codegen.Interfaces.FieldDescription": {
+    "message": "FieldDescription",
+    "description": "The label for the doc item 'FieldDescription' in sidebar 'guide', linking to the doc api/@polycanal/codegen/interfaces/FieldDescription"
+  },
+  "sidebar.guide.doc.api.@polycanal/codegen.Interfaces.GenerateOptions": {
+    "message": "GenerateOptions",
+    "description": "The label for the doc item 'GenerateOptions' in sidebar 'guide', linking to the doc api/@polycanal/codegen/interfaces/GenerateOptions"
+  },
+  "sidebar.guide.doc.api.@polycanal/codegen.Interfaces.MergeConflict": {
+    "message": "MergeConflict",
+    "description": "The label for the doc item 'MergeConflict' in sidebar 'guide', linking to the doc api/@polycanal/codegen/interfaces/MergeConflict"
+  },
+  "sidebar.guide.doc.api.@polycanal/codegen.Interfaces.MergeResult": {
+    "message": "MergeResult",
+    "description": "The label for the doc item 'MergeResult' in sidebar 'guide', linking to the doc api/@polycanal/codegen/interfaces/MergeResult"
+  },
+  "sidebar.guide.doc.api.@polycanal/codegen.Type Aliases.InputDescription": {
+    "message": "InputDescription",
+    "description": "The label for the doc item 'InputDescription' in sidebar 'guide', linking to the doc api/@polycanal/codegen/type-aliases/InputDescription"
+  },
+  "sidebar.guide.doc.api.@polycanal/codegen.Type Aliases.OperationDescription": {
+    "message": "OperationDescription",
+    "description": "The label for the doc item 'OperationDescription' in sidebar 'guide', linking to the doc api/@polycanal/codegen/type-aliases/OperationDescription"
+  },
+  "sidebar.guide.doc.api.@polycanal/codegen.Variables.SCHEMA_REF_PREFIX": {
+    "message": "SCHEMA_REF_PREFIX",
+    "description": "The label for the doc item 'SCHEMA_REF_PREFIX' in sidebar 'guide', linking to the doc api/@polycanal/codegen/variables/SCHEMA_REF_PREFIX"
+  },
+  "sidebar.guide.doc.api.@polycanal/codegen.Functions.acceptsUndefined": {
+    "message": "acceptsUndefined",
+    "description": "The label for the doc item 'acceptsUndefined' in sidebar 'guide', linking to the doc api/@polycanal/codegen/functions/acceptsUndefined"
+  },
+  "sidebar.guide.doc.api.@polycanal/codegen.Functions.describeContract": {
+    "message": "describeContract",
+    "description": "The label for the doc item 'describeContract' in sidebar 'guide', linking to the doc api/@polycanal/codegen/functions/describeContract"
+  },
+  "sidebar.guide.doc.api.@polycanal/codegen.Functions.describeSchema": {
+    "message": "describeSchema",
+    "description": "The label for the doc item 'describeSchema' in sidebar 'guide', linking to the doc api/@polycanal/codegen/functions/describeSchema"
+  },
+  "sidebar.guide.doc.api.@polycanal/codegen.Functions.generateContractSource": {
+    "message": "generateContractSource",
+    "description": "The label for the doc item 'generateContractSource' in sidebar 'guide', linking to the doc api/@polycanal/codegen/functions/generateContractSource"
+  },
+  "sidebar.guide.doc.api.@polycanal/codegen.Functions.hoistDefinitions": {
+    "message": "hoistDefinitions",
+    "description": "The label for the doc item 'hoistDefinitions' in sidebar 'guide', linking to the doc api/@polycanal/codegen/functions/hoistDefinitions"
+  },
+  "sidebar.guide.doc.api.@polycanal/codegen.Functions.mergeDescriptions": {
+    "message": "mergeDescriptions",
+    "description": "The label for the doc item 'mergeDescriptions' in sidebar 'guide', linking to the doc api/@polycanal/codegen/functions/mergeDescriptions"
+  },
+  "sidebar.guide.doc.api.@polycanal/codegen.Functions.operationId": {
+    "message": "operationId",
+    "description": "The label for the doc item 'operationId' in sidebar 'guide', linking to the doc api/@polycanal/codegen/functions/operationId"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Namespaces.StandardSchemaV1.Interfaces.FailureResult": {
+    "message": "FailureResult",
+    "description": "The label for the doc item 'FailureResult' in sidebar 'guide', linking to the doc api/@polycanal/core/namespaces/StandardSchemaV1/interfaces/FailureResult"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Namespaces.StandardSchemaV1.Interfaces.Issue": {
+    "message": "Issue",
+    "description": "The label for the doc item 'Issue' in sidebar 'guide', linking to the doc api/@polycanal/core/namespaces/StandardSchemaV1/interfaces/Issue"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Namespaces.StandardSchemaV1.Interfaces.Options": {
+    "message": "Options",
+    "description": "The label for the doc item 'Options' in sidebar 'guide', linking to the doc api/@polycanal/core/namespaces/StandardSchemaV1/interfaces/Options"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Namespaces.StandardSchemaV1.Interfaces.PathSegment": {
+    "message": "PathSegment",
+    "description": "The label for the doc item 'PathSegment' in sidebar 'guide', linking to the doc api/@polycanal/core/namespaces/StandardSchemaV1/interfaces/PathSegment"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Namespaces.StandardSchemaV1.Interfaces.Props": {
+    "message": "Props",
+    "description": "The label for the doc item 'Props' in sidebar 'guide', linking to the doc api/@polycanal/core/namespaces/StandardSchemaV1/interfaces/Props"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Namespaces.StandardSchemaV1.Interfaces.SuccessResult": {
+    "message": "SuccessResult",
+    "description": "The label for the doc item 'SuccessResult' in sidebar 'guide', linking to the doc api/@polycanal/core/namespaces/StandardSchemaV1/interfaces/SuccessResult"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Namespaces.StandardSchemaV1.Interfaces.Types": {
+    "message": "Types",
+    "description": "The label for the doc item 'Types' in sidebar 'guide', linking to the doc api/@polycanal/core/namespaces/StandardSchemaV1/interfaces/Types"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Namespaces.StandardSchemaV1.Type Aliases.InferInput": {
+    "message": "InferInput",
+    "description": "The label for the doc item 'InferInput' in sidebar 'guide', linking to the doc api/@polycanal/core/namespaces/StandardSchemaV1/type-aliases/InferInput"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Namespaces.StandardSchemaV1.Type Aliases.InferOutput": {
+    "message": "InferOutput",
+    "description": "The label for the doc item 'InferOutput' in sidebar 'guide', linking to the doc api/@polycanal/core/namespaces/StandardSchemaV1/type-aliases/InferOutput"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Namespaces.StandardSchemaV1.Type Aliases.Result": {
+    "message": "Result",
+    "description": "The label for the doc item 'Result' in sidebar 'guide', linking to the doc api/@polycanal/core/namespaces/StandardSchemaV1/type-aliases/Result"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Classes.ContractDefinitionError": {
+    "message": "ContractDefinitionError",
+    "description": "The label for the doc item 'ContractDefinitionError' in sidebar 'guide', linking to the doc api/@polycanal/core/classes/ContractDefinitionError"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Classes.PolycanalError": {
+    "message": "PolycanalError",
+    "description": "The label for the doc item 'PolycanalError' in sidebar 'guide', linking to the doc api/@polycanal/core/classes/PolycanalError"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.ActionCall": {
+    "message": "ActionCall",
+    "description": "The label for the doc item 'ActionCall' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/ActionCall"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.ActionConfig": {
+    "message": "ActionConfig",
+    "description": "The label for the doc item 'ActionConfig' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/ActionConfig"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.ActionDefinition": {
+    "message": "ActionDefinition",
+    "description": "The label for the doc item 'ActionDefinition' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/ActionDefinition"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.ActionModel": {
+    "message": "ActionModel",
+    "description": "The label for the doc item 'ActionModel' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/ActionModel"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.ActionTransport": {
+    "message": "ActionTransport",
+    "description": "The label for the doc item 'ActionTransport' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/ActionTransport"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.BindingEmitter": {
+    "message": "BindingEmitter",
+    "description": "The label for the doc item 'BindingEmitter' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/BindingEmitter"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.CallOptions": {
+    "message": "CallOptions",
+    "description": "The label for the doc item 'CallOptions' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/CallOptions"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.ClientOptions": {
+    "message": "ClientOptions",
+    "description": "The label for the doc item 'ClientOptions' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/ClientOptions"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.Codec": {
+    "message": "Codec",
+    "description": "The label for the doc item 'Codec' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/Codec"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.CodeImport": {
+    "message": "CodeImport",
+    "description": "The label for the doc item 'CodeImport' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/CodeImport"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.ContractModel": {
+    "message": "ContractModel",
+    "description": "The label for the doc item 'ContractModel' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/ContractModel"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.ContractTree": {
+    "message": "ContractTree",
+    "description": "The label for the doc item 'ContractTree' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/ContractTree"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.EventCall": {
+    "message": "EventCall",
+    "description": "The label for the doc item 'EventCall' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/EventCall"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.EventDefinition": {
+    "message": "EventDefinition",
+    "description": "The label for the doc item 'EventDefinition' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/EventDefinition"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.EventModel": {
+    "message": "EventModel",
+    "description": "The label for the doc item 'EventModel' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/EventModel"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.EventTransport": {
+    "message": "EventTransport",
+    "description": "The label for the doc item 'EventTransport' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/EventTransport"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.FieldDescriptor": {
+    "message": "FieldDescriptor",
+    "description": "The label for the doc item 'FieldDescriptor' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/FieldDescriptor"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.GeneratedCode": {
+    "message": "GeneratedCode",
+    "description": "The label for the doc item 'GeneratedCode' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/GeneratedCode"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.InputDefinition": {
+    "message": "InputDefinition",
+    "description": "The label for the doc item 'InputDefinition' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/InputDefinition"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.InputModel": {
+    "message": "InputModel",
+    "description": "The label for the doc item 'InputModel' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/InputModel"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.InterceptorContext": {
+    "message": "InterceptorContext",
+    "description": "The label for the doc item 'InterceptorContext' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/InterceptorContext"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.NormalizedField": {
+    "message": "NormalizedField",
+    "description": "The label for the doc item 'NormalizedField' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/NormalizedField"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.OperationMeta": {
+    "message": "OperationMeta",
+    "description": "The label for the doc item 'OperationMeta' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/OperationMeta"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.OperationOptions": {
+    "message": "OperationOptions",
+    "description": "The label for the doc item 'OperationOptions' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/OperationOptions"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.PolycanalErrorDetails": {
+    "message": "PolycanalErrorDetails",
+    "description": "The label for the doc item 'PolycanalErrorDetails' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/PolycanalErrorDetails"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.SchemaGenerationContext": {
+    "message": "SchemaGenerationContext",
+    "description": "The label for the doc item 'SchemaGenerationContext' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/SchemaGenerationContext"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.StandardSchemaV1": {
+    "message": "StandardSchemaV1",
+    "description": "The label for the doc item 'StandardSchemaV1' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/StandardSchemaV1"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.SubscribeOptions": {
+    "message": "SubscribeOptions",
+    "description": "The label for the doc item 'SubscribeOptions' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/SubscribeOptions"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.TransportBinding": {
+    "message": "TransportBinding",
+    "description": "The label for the doc item 'TransportBinding' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/TransportBinding"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.TransportDriver": {
+    "message": "TransportDriver",
+    "description": "The label for the doc item 'TransportDriver' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/TransportDriver"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Interfaces.ValidationDriver": {
+    "message": "ValidationDriver",
+    "description": "The label for the doc item 'ValidationDriver' in sidebar 'guide', linking to the doc api/@polycanal/core/interfaces/ValidationDriver"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.ActionBinding": {
+    "message": "ActionBinding",
+    "description": "The label for the doc item 'ActionBinding' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/ActionBinding"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.ActionInput": {
+    "message": "ActionInput",
+    "description": "The label for the doc item 'ActionInput' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/ActionInput"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.ActionInputOf": {
+    "message": "ActionInputOf",
+    "description": "The label for the doc item 'ActionInputOf' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/ActionInputOf"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.ActionMethod": {
+    "message": "ActionMethod",
+    "description": "The label for the doc item 'ActionMethod' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/ActionMethod"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.ActionOutcome": {
+    "message": "ActionOutcome",
+    "description": "The label for the doc item 'ActionOutcome' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/ActionOutcome"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.ActionOutputOf": {
+    "message": "ActionOutputOf",
+    "description": "The label for the doc item 'ActionOutputOf' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/ActionOutputOf"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.AnyDefinition": {
+    "message": "AnyDefinition",
+    "description": "The label for the doc item 'AnyDefinition' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/AnyDefinition"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.AnyInterceptor": {
+    "message": "AnyInterceptor",
+    "description": "The label for the doc item 'AnyInterceptor' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/AnyInterceptor"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.BindingCheck": {
+    "message": "BindingCheck",
+    "description": "The label for the doc item 'BindingCheck' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/BindingCheck"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.CallContext": {
+    "message": "CallContext",
+    "description": "The label for the doc item 'CallContext' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/CallContext"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.ChannelFamily": {
+    "message": "ChannelFamily",
+    "description": "The label for the doc item 'ChannelFamily' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/ChannelFamily"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.Client": {
+    "message": "Client",
+    "description": "The label for the doc item 'Client' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/Client"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.ContractNode": {
+    "message": "ContractNode",
+    "description": "The label for the doc item 'ContractNode' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/ContractNode"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.ErrorSchemas": {
+    "message": "ErrorSchemas",
+    "description": "The label for the doc item 'ErrorSchemas' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/ErrorSchemas"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.EventBinding": {
+    "message": "EventBinding",
+    "description": "The label for the doc item 'EventBinding' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/EventBinding"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.EventHandle": {
+    "message": "EventHandle",
+    "description": "The label for the doc item 'EventHandle' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/EventHandle"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.EventReceiveOf": {
+    "message": "EventReceiveOf",
+    "description": "The label for the doc item 'EventReceiveOf' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/EventReceiveOf"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.EventSendOf": {
+    "message": "EventSendOf",
+    "description": "The label for the doc item 'EventSendOf' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/EventSendOf"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.FieldDefinition": {
+    "message": "FieldDefinition",
+    "description": "The label for the doc item 'FieldDefinition' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/FieldDefinition"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.InputFields": {
+    "message": "InputFields",
+    "description": "The label for the doc item 'InputFields' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/InputFields"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.InputOf": {
+    "message": "InputOf",
+    "description": "The label for the doc item 'InputOf' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/InputOf"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.Interceptor": {
+    "message": "Interceptor",
+    "description": "The label for the doc item 'Interceptor' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/Interceptor"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.JsonSchema": {
+    "message": "JsonSchema",
+    "description": "The label for the doc item 'JsonSchema' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/JsonSchema"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.OperationModel": {
+    "message": "OperationModel",
+    "description": "The label for the doc item 'OperationModel' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/OperationModel"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.OutputOf": {
+    "message": "OutputOf",
+    "description": "The label for the doc item 'OutputOf' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/OutputOf"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.PolycanalErrorKind": {
+    "message": "PolycanalErrorKind",
+    "description": "The label for the doc item 'PolycanalErrorKind' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/PolycanalErrorKind"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.RequestOf": {
+    "message": "RequestOf",
+    "description": "The label for the doc item 'RequestOf' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/RequestOf"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.ResponseOf": {
+    "message": "ResponseOf",
+    "description": "The label for the doc item 'ResponseOf' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/ResponseOf"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.SourceOf": {
+    "message": "SourceOf",
+    "description": "The label for the doc item 'SourceOf' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/SourceOf"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Type Aliases.WiresOf": {
+    "message": "WiresOf",
+    "description": "The label for the doc item 'WiresOf' in sidebar 'guide', linking to the doc api/@polycanal/core/type-aliases/WiresOf"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Variables.jsonCodec": {
+    "message": "jsonCodec",
+    "description": "The label for the doc item 'jsonCodec' in sidebar 'guide', linking to the doc api/@polycanal/core/variables/jsonCodec"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Variables.VOID_KEYWORD": {
+    "message": "VOID_KEYWORD",
+    "description": "The label for the doc item 'VOID_KEYWORD' in sidebar 'guide', linking to the doc api/@polycanal/core/variables/VOID_KEYWORD"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Functions.action": {
+    "message": "action",
+    "description": "The label for the doc item 'action' in sidebar 'guide', linking to the doc api/@polycanal/core/functions/action"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Functions.createClient": {
+    "message": "createClient",
+    "description": "The label for the doc item 'createClient' in sidebar 'guide', linking to the doc api/@polycanal/core/functions/createClient"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Functions.defineContract": {
+    "message": "defineContract",
+    "description": "The label for the doc item 'defineContract' in sidebar 'guide', linking to the doc api/@polycanal/core/functions/defineContract"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Functions.event": {
+    "message": "event",
+    "description": "The label for the doc item 'event' in sidebar 'guide', linking to the doc api/@polycanal/core/functions/event"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Functions.input": {
+    "message": "input",
+    "description": "The label for the doc item 'input' in sidebar 'guide', linking to the doc api/@polycanal/core/functions/input"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Functions.isDefinition": {
+    "message": "isDefinition",
+    "description": "The label for the doc item 'isDefinition' in sidebar 'guide', linking to the doc api/@polycanal/core/functions/isDefinition"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Functions.isInputDefinition": {
+    "message": "isInputDefinition",
+    "description": "The label for the doc item 'isInputDefinition' in sidebar 'guide', linking to the doc api/@polycanal/core/functions/isInputDefinition"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Functions.isPolycanalError": {
+    "message": "isPolycanalError",
+    "description": "The label for the doc item 'isPolycanalError' in sidebar 'guide', linking to the doc api/@polycanal/core/functions/isPolycanalError"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Functions.isStandardSchema": {
+    "message": "isStandardSchema",
+    "description": "The label for the doc item 'isStandardSchema' in sidebar 'guide', linking to the doc api/@polycanal/core/functions/isStandardSchema"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Functions.matchesContentType": {
+    "message": "matchesContentType",
+    "description": "The label for the doc item 'matchesContentType' in sidebar 'guide', linking to the doc api/@polycanal/core/functions/matchesContentType"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Functions.toJsonSchema": {
+    "message": "toJsonSchema",
+    "description": "The label for the doc item 'toJsonSchema' in sidebar 'guide', linking to the doc api/@polycanal/core/functions/toJsonSchema"
+  },
+  "sidebar.guide.doc.api.@polycanal/core.Functions.toModel": {
+    "message": "toModel",
+    "description": "The label for the doc item 'toModel' in sidebar 'guide', linking to the doc api/@polycanal/core/functions/toModel"
+  },
+  "sidebar.guide.doc.api.@polycanal/express.Interfaces.EndpointOptions": {
+    "message": "EndpointOptions",
+    "description": "The label for the doc item 'EndpointOptions' in sidebar 'guide', linking to the doc api/@polycanal/express/interfaces/EndpointOptions"
+  },
+  "sidebar.guide.doc.api.@polycanal/express.Interfaces.ExpressDiscovery": {
+    "message": "ExpressDiscovery",
+    "description": "The label for the doc item 'ExpressDiscovery' in sidebar 'guide', linking to the doc api/@polycanal/express/interfaces/ExpressDiscovery"
+  },
+  "sidebar.guide.doc.api.@polycanal/express.Interfaces.ExpressDiscoveryOptions": {
+    "message": "ExpressDiscoveryOptions",
+    "description": "The label for the doc item 'ExpressDiscoveryOptions' in sidebar 'guide', linking to the doc api/@polycanal/express/interfaces/ExpressDiscoveryOptions"
+  },
+  "sidebar.guide.doc.api.@polycanal/express.Interfaces.ExpressDiscoveryReport": {
+    "message": "ExpressDiscoveryReport",
+    "description": "The label for the doc item 'ExpressDiscoveryReport' in sidebar 'guide', linking to the doc api/@polycanal/express/interfaces/ExpressDiscoveryReport"
+  },
+  "sidebar.guide.doc.api.@polycanal/express.Interfaces.ExpressRoute": {
+    "message": "ExpressRoute",
+    "description": "The label for the doc item 'ExpressRoute' in sidebar 'guide', linking to the doc api/@polycanal/express/interfaces/ExpressRoute"
+  },
+  "sidebar.guide.doc.api.@polycanal/express.Interfaces.GenerateExpressContractOptions": {
+    "message": "GenerateExpressContractOptions",
+    "description": "The label for the doc item 'GenerateExpressContractOptions' in sidebar 'guide', linking to the doc api/@polycanal/express/interfaces/GenerateExpressContractOptions"
+  },
+  "sidebar.guide.doc.api.@polycanal/express.Type Aliases.EndpointInput": {
+    "message": "EndpointInput",
+    "description": "The label for the doc item 'EndpointInput' in sidebar 'guide', linking to the doc api/@polycanal/express/type-aliases/EndpointInput"
+  },
+  "sidebar.guide.doc.api.@polycanal/express.Functions.discoverExpressContract": {
+    "message": "discoverExpressContract",
+    "description": "The label for the doc item 'discoverExpressContract' in sidebar 'guide', linking to the doc api/@polycanal/express/functions/discoverExpressContract"
+  },
+  "sidebar.guide.doc.api.@polycanal/express.Functions.endpoint": {
+    "message": "endpoint",
+    "description": "The label for the doc item 'endpoint' in sidebar 'guide', linking to the doc api/@polycanal/express/functions/endpoint"
+  },
+  "sidebar.guide.doc.api.@polycanal/express.Functions.endpointOf": {
+    "message": "endpointOf",
+    "description": "The label for the doc item 'endpointOf' in sidebar 'guide', linking to the doc api/@polycanal/express/functions/endpointOf"
+  },
+  "sidebar.guide.doc.api.@polycanal/express.Functions.generateExpressContract": {
+    "message": "generateExpressContract",
+    "description": "The label for the doc item 'generateExpressContract' in sidebar 'guide', linking to the doc api/@polycanal/express/functions/generateExpressContract"
+  },
+  "sidebar.guide.doc.api.@polycanal/express.Functions.listRoutes": {
+    "message": "listRoutes",
+    "description": "The label for the doc item 'listRoutes' in sidebar 'guide', linking to the doc api/@polycanal/express/functions/listRoutes"
+  },
+  "sidebar.guide.doc.api.@polycanal/express.Functions.pathFromRegexp": {
+    "message": "pathFromRegexp",
+    "description": "The label for the doc item 'pathFromRegexp' in sidebar 'guide', linking to the doc api/@polycanal/express/functions/pathFromRegexp"
+  },
+  "sidebar.guide.doc.api.@polycanal/express.Functions.recordMountPaths": {
+    "message": "recordMountPaths",
+    "description": "The label for the doc item 'recordMountPaths' in sidebar 'guide', linking to the doc api/@polycanal/express/functions/recordMountPaths"
+  },
+  "sidebar.guide.doc.api.@polycanal/nest.Interfaces.EndpointOptions": {
+    "message": "EndpointOptions",
+    "description": "The label for the doc item 'EndpointOptions' in sidebar 'guide', linking to the doc api/@polycanal/nest/interfaces/EndpointOptions"
+  },
+  "sidebar.guide.doc.api.@polycanal/nest.Interfaces.GenerateNestContractOptions": {
+    "message": "GenerateNestContractOptions",
+    "description": "The label for the doc item 'GenerateNestContractOptions' in sidebar 'guide', linking to the doc api/@polycanal/nest/interfaces/GenerateNestContractOptions"
+  },
+  "sidebar.guide.doc.api.@polycanal/nest.Interfaces.NestDiscovery": {
+    "message": "NestDiscovery",
+    "description": "The label for the doc item 'NestDiscovery' in sidebar 'guide', linking to the doc api/@polycanal/nest/interfaces/NestDiscovery"
+  },
+  "sidebar.guide.doc.api.@polycanal/nest.Interfaces.NestDiscoveryOptions": {
+    "message": "NestDiscoveryOptions",
+    "description": "The label for the doc item 'NestDiscoveryOptions' in sidebar 'guide', linking to the doc api/@polycanal/nest/interfaces/NestDiscoveryOptions"
+  },
+  "sidebar.guide.doc.api.@polycanal/nest.Interfaces.NestDiscoveryReport": {
+    "message": "NestDiscoveryReport",
+    "description": "The label for the doc item 'NestDiscoveryReport' in sidebar 'guide', linking to the doc api/@polycanal/nest/interfaces/NestDiscoveryReport"
+  },
+  "sidebar.guide.doc.api.@polycanal/nest.Interfaces.NestRoute": {
+    "message": "NestRoute",
+    "description": "The label for the doc item 'NestRoute' in sidebar 'guide', linking to the doc api/@polycanal/nest/interfaces/NestRoute"
+  },
+  "sidebar.guide.doc.api.@polycanal/nest.Type Aliases.EndpointFields": {
+    "message": "EndpointFields",
+    "description": "The label for the doc item 'EndpointFields' in sidebar 'guide', linking to the doc api/@polycanal/nest/type-aliases/EndpointFields"
+  },
+  "sidebar.guide.doc.api.@polycanal/nest.Functions.discoverNestContract": {
+    "message": "discoverNestContract",
+    "description": "The label for the doc item 'discoverNestContract' in sidebar 'guide', linking to the doc api/@polycanal/nest/functions/discoverNestContract"
+  },
+  "sidebar.guide.doc.api.@polycanal/nest.Functions.Endpoint": {
+    "message": "Endpoint",
+    "description": "The label for the doc item 'Endpoint' in sidebar 'guide', linking to the doc api/@polycanal/nest/functions/Endpoint"
+  },
+  "sidebar.guide.doc.api.@polycanal/nest.Functions.endpointNamespace": {
+    "message": "endpointNamespace",
+    "description": "The label for the doc item 'endpointNamespace' in sidebar 'guide', linking to the doc api/@polycanal/nest/functions/endpointNamespace"
+  },
+  "sidebar.guide.doc.api.@polycanal/nest.Functions.EndpointNamespace": {
+    "message": "EndpointNamespace",
+    "description": "The label for the doc item 'EndpointNamespace' in sidebar 'guide', linking to the doc api/@polycanal/nest/functions/EndpointNamespace-1"
+  },
+  "sidebar.guide.doc.api.@polycanal/nest.Functions.endpointOptions": {
+    "message": "endpointOptions",
+    "description": "The label for the doc item 'endpointOptions' in sidebar 'guide', linking to the doc api/@polycanal/nest/functions/endpointOptions"
+  },
+  "sidebar.guide.doc.api.@polycanal/nest.Functions.generateNestContract": {
+    "message": "generateNestContract",
+    "description": "The label for the doc item 'generateNestContract' in sidebar 'guide', linking to the doc api/@polycanal/nest/functions/generateNestContract"
+  },
+  "sidebar.guide.doc.api.@polycanal/openapi.Interfaces.GenerateFromOpenApiOptions": {
+    "message": "GenerateFromOpenApiOptions",
+    "description": "The label for the doc item 'GenerateFromOpenApiOptions' in sidebar 'guide', linking to the doc api/@polycanal/openapi/interfaces/GenerateFromOpenApiOptions"
+  },
+  "sidebar.guide.doc.api.@polycanal/openapi.Interfaces.ImportOptions": {
+    "message": "ImportOptions",
+    "description": "The label for the doc item 'ImportOptions' in sidebar 'guide', linking to the doc api/@polycanal/openapi/interfaces/ImportOptions"
+  },
+  "sidebar.guide.doc.api.@polycanal/openapi.Interfaces.ImportResult": {
+    "message": "ImportResult",
+    "description": "The label for the doc item 'ImportResult' in sidebar 'guide', linking to the doc api/@polycanal/openapi/interfaces/ImportResult"
+  },
+  "sidebar.guide.doc.api.@polycanal/openapi.Interfaces.OpenApiDocument": {
+    "message": "OpenApiDocument",
+    "description": "The label for the doc item 'OpenApiDocument' in sidebar 'guide', linking to the doc api/@polycanal/openapi/interfaces/OpenApiDocument"
+  },
+  "sidebar.guide.doc.api.@polycanal/openapi.Interfaces.OperationInfo": {
+    "message": "OperationInfo",
+    "description": "The label for the doc item 'OperationInfo' in sidebar 'guide', linking to the doc api/@polycanal/openapi/interfaces/OperationInfo"
+  },
+  "sidebar.guide.doc.api.@polycanal/openapi.Functions.convertSchema": {
+    "message": "convertSchema",
+    "description": "The label for the doc item 'convertSchema' in sidebar 'guide', linking to the doc api/@polycanal/openapi/functions/convertSchema"
+  },
+  "sidebar.guide.doc.api.@polycanal/openapi.Functions.generateFromOpenApi": {
+    "message": "generateFromOpenApi",
+    "description": "The label for the doc item 'generateFromOpenApi' in sidebar 'guide', linking to the doc api/@polycanal/openapi/functions/generateFromOpenApi"
+  },
+  "sidebar.guide.doc.api.@polycanal/openapi.Functions.importOpenApi": {
+    "message": "importOpenApi",
+    "description": "The label for the doc item 'importOpenApi' in sidebar 'guide', linking to the doc api/@polycanal/openapi/functions/importOpenApi"
+  },
+  "sidebar.guide.doc.api.@polycanal/openapi.Functions.run": {
+    "message": "run",
+    "description": "The label for the doc item 'run' in sidebar 'guide', linking to the doc api/@polycanal/openapi/functions/run"
+  },
+  "sidebar.guide.doc.api.@polycanal/rest.Interfaces.BuildRequestOptions": {
+    "message": "BuildRequestOptions",
+    "description": "The label for the doc item 'BuildRequestOptions' in sidebar 'guide', linking to the doc api/@polycanal/rest/interfaces/BuildRequestOptions"
+  },
+  "sidebar.guide.doc.api.@polycanal/rest.Interfaces.FetchRestOptions": {
+    "message": "FetchRestOptions",
+    "description": "The label for the doc item 'FetchRestOptions' in sidebar 'guide', linking to the doc api/@polycanal/rest/interfaces/FetchRestOptions"
+  },
+  "sidebar.guide.doc.api.@polycanal/rest.Interfaces.HttpRequest": {
+    "message": "HttpRequest",
+    "description": "The label for the doc item 'HttpRequest' in sidebar 'guide', linking to the doc api/@polycanal/rest/interfaces/HttpRequest"
+  },
+  "sidebar.guide.doc.api.@polycanal/rest.Interfaces.HttpResponse": {
+    "message": "HttpResponse",
+    "description": "The label for the doc item 'HttpResponse' in sidebar 'guide', linking to the doc api/@polycanal/rest/interfaces/HttpResponse"
+  },
+  "sidebar.guide.doc.api.@polycanal/rest.Interfaces.RawHttpResponse": {
+    "message": "RawHttpResponse",
+    "description": "The label for the doc item 'RawHttpResponse' in sidebar 'guide', linking to the doc api/@polycanal/rest/interfaces/RawHttpResponse"
+  },
+  "sidebar.guide.doc.api.@polycanal/rest.Interfaces.RestBinding": {
+    "message": "RestBinding",
+    "description": "The label for the doc item 'RestBinding' in sidebar 'guide', linking to the doc api/@polycanal/rest/interfaces/RestBinding"
+  },
+  "sidebar.guide.doc.api.@polycanal/rest.Interfaces.RestBindingOptions": {
+    "message": "RestBindingOptions",
+    "description": "The label for the doc item 'RestBindingOptions' in sidebar 'guide', linking to the doc api/@polycanal/rest/interfaces/RestBindingOptions"
+  },
+  "sidebar.guide.doc.api.@polycanal/rest.Interfaces.RestTransportOptions": {
+    "message": "RestTransportOptions",
+    "description": "The label for the doc item 'RestTransportOptions' in sidebar 'guide', linking to the doc api/@polycanal/rest/interfaces/RestTransportOptions"
+  },
+  "sidebar.guide.doc.api.@polycanal/rest.Type Aliases.HttpMethod": {
+    "message": "HttpMethod",
+    "description": "The label for the doc item 'HttpMethod' in sidebar 'guide', linking to the doc api/@polycanal/rest/type-aliases/HttpMethod"
+  },
+  "sidebar.guide.doc.api.@polycanal/rest.Type Aliases.HttpSender": {
+    "message": "HttpSender",
+    "description": "The label for the doc item 'HttpSender' in sidebar 'guide', linking to the doc api/@polycanal/rest/type-aliases/HttpSender"
+  },
+  "sidebar.guide.doc.api.@polycanal/rest.Type Aliases.PathParams": {
+    "message": "PathParams",
+    "description": "The label for the doc item 'PathParams' in sidebar 'guide', linking to the doc api/@polycanal/rest/type-aliases/PathParams"
+  },
+  "sidebar.guide.doc.api.@polycanal/rest.Type Aliases.RestSource": {
+    "message": "RestSource",
+    "description": "The label for the doc item 'RestSource' in sidebar 'guide', linking to the doc api/@polycanal/rest/type-aliases/RestSource"
+  },
+  "sidebar.guide.doc.api.@polycanal/rest.Variables.rest": {
+    "message": "rest",
+    "description": "The label for the doc item 'rest' in sidebar 'guide', linking to the doc api/@polycanal/rest/variables/rest"
+  },
+  "sidebar.guide.doc.api.@polycanal/rest.Variables.restBindingEmitter": {
+    "message": "restBindingEmitter",
+    "description": "The label for the doc item 'restBindingEmitter' in sidebar 'guide', linking to the doc api/@polycanal/rest/variables/restBindingEmitter"
+  },
+  "sidebar.guide.doc.api.@polycanal/rest.Functions.buildRequest": {
+    "message": "buildRequest",
+    "description": "The label for the doc item 'buildRequest' in sidebar 'guide', linking to the doc api/@polycanal/rest/functions/buildRequest"
+  },
+  "sidebar.guide.doc.api.@polycanal/rest.Functions.fetchRest": {
+    "message": "fetchRest",
+    "description": "The label for the doc item 'fetchRest' in sidebar 'guide', linking to the doc api/@polycanal/rest/functions/fetchRest"
+  },
+  "sidebar.guide.doc.api.@polycanal/rest.Functions.isRestBinding": {
+    "message": "isRestBinding",
+    "description": "The label for the doc item 'isRestBinding' in sidebar 'guide', linking to the doc api/@polycanal/rest/functions/isRestBinding"
+  },
+  "sidebar.guide.doc.api.@polycanal/rest.Functions.pathParams": {
+    "message": "pathParams",
+    "description": "The label for the doc item 'pathParams' in sidebar 'guide', linking to the doc api/@polycanal/rest/functions/pathParams"
+  },
+  "sidebar.guide.doc.api.@polycanal/rest.Functions.restTransport": {
+    "message": "restTransport",
+    "description": "The label for the doc item 'restTransport' in sidebar 'guide', linking to the doc api/@polycanal/rest/functions/restTransport"
+  },
+  "sidebar.guide.doc.api.@polycanal/rest.Functions.withHeaders": {
+    "message": "withHeaders",
+    "description": "The label for the doc item 'withHeaders' in sidebar 'guide', linking to the doc api/@polycanal/rest/functions/withHeaders"
+  },
+  "sidebar.guide.doc.api.@polycanal/zod.Variables.zodDriver": {
+    "message": "zodDriver",
+    "description": "The label for the doc item 'zodDriver' in sidebar 'guide', linking to the doc api/@polycanal/zod/variables/zodDriver"
+  },
+  "sidebar.guide.doc.api.@polycanal/zod.Functions.generateZod": {
+    "message": "generateZod",
+    "description": "The label for the doc item 'generateZod' in sidebar 'guide', linking to the doc api/@polycanal/zod/functions/generateZod"
+  }
+}

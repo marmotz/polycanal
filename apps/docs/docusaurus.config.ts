@@ -22,9 +22,15 @@ const config: Config = {
   onBrokenLinks: 'throw',
   onBrokenAnchors: 'throw',
 
+  // English is the default locale (served at the root), French is served under /fr/. Untranslated pages (the
+  // generated API reference) fall back to English.
   i18n: {
     defaultLocale: 'en',
-    locales: ['en'],
+    locales: ['en', 'fr'],
+    localeConfigs: {
+      en: { label: 'English', htmlLang: 'en' },
+      fr: { label: 'Français', htmlLang: 'fr' },
+    },
   },
 
   markdown: {
@@ -40,10 +46,10 @@ const config: Config = {
         docs: {
           routeBasePath: '/',
           sidebarPath: './sidebars.ts',
-          editUrl: `${GITHUB_REPO}/tree/main/apps/docs/`,
+          editUrl: `${GITHUB_REPO}/tree/develop/apps/docs/`,
           // The working copy is published as "next" until the first release. Cut a version with
           // `bun run --filter @polycanal/docs version <x.y.z>`: it is frozen under versioned_docs/ and becomes the
-          // default, while "next" keeps following the main branch.
+          // default, while "next" keeps following the develop branch.
           lastVersion: 'current',
           versions: {
             current: { label: 'next', banner: 'none' },
@@ -97,6 +103,7 @@ const config: Config = {
         indexDocs: true,
         indexBlog: false,
         docsRouteBasePath: '/',
+        language: ['en', 'fr'],
       },
     ],
   ],
@@ -118,6 +125,10 @@ const config: Config = {
         {
           // Shown once there is more than one version (after the first `docs:version`).
           type: 'docsVersionDropdown',
+          position: 'right',
+        },
+        {
+          type: 'localeDropdown',
           position: 'right',
         },
         {
@@ -143,7 +154,7 @@ const config: Config = {
           items: [
             { label: 'GitHub', href: GITHUB_REPO },
             { label: 'Issues', href: `${GITHUB_REPO}/issues` },
-            { label: 'Specification', href: `${GITHUB_REPO}/blob/main/docs/specs.md` },
+            { label: 'Specification', href: `${GITHUB_REPO}/blob/develop/docs/specs.md` },
           ],
         },
       ],

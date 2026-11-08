@@ -15,7 +15,7 @@ const user = await server.auth.login({ email: 'ada@example.com', password: '...'
 
 :::caution Work in progress
 
-Polycanal is not released yet. This documentation follows the `main` branch (version **next**).
+Polycanal is not released yet. This documentation follows the `develop` branch (version **next**).
 
 :::
 
@@ -39,4 +39,5 @@ the opposite approach:
 2. **Create a client** from the contract with the transport driver of your choice (`fetch`, Angular `HttpClient`).
 3. **Call** `server.namespace.operation(input)`: typed, validated, and returning the validated response.
 
-Continue with the [installation](./getting-started/installation.md) and the [quick start](./getting-started/quick-start.md).
+Continue with the [installation](./getting-started/installation.md) and
+the [quick start](./getting-started/quick-start.md).

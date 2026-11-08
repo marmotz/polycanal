@@ -6,9 +6,28 @@ let typedocSidebar: unknown[] = [];
 
 try {
   const generated = require('./docs/api/typedoc-sidebar.cjs');
-  typedocSidebar = Array.isArray(generated) ? generated : (generated?.items ?? []);
+  typedocSidebar = withUniqueKeys(Array.isArray(generated) ? generated : (generated?.items ?? []), 'api');
 } catch {
   typedocSidebar = [];
+}
+
+/**
+ * Packages of the API reference share labels: categories ("Interfaces", "Functions"...) and some symbols
+ * (`EndpointOptions` in the NestJS and Express adapters). Translation keys are built from labels and must be unique, so
+ * every item gets a key from its location.
+ */
+function withUniqueKeys(items: unknown[], prefix: string): unknown[] {
+  return items.map((item) => {
+    const entry = item as { type?: string; label?: string; items?: unknown[] };
+
+    if (typeof entry.label !== 'string') {
+      return item;
+    }
+
+    const key = `${prefix}.${entry.label}`;
+
+    return Array.isArray(entry.items) ? { ...entry, key, items: withUniqueKeys(entry.items, key) } : { ...entry, key };
+  });
 }
 
 const sidebars: SidebarsConfig = {

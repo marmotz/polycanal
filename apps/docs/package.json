@@ -2,7 +2,7 @@
   "name": "@polycanal/docs",
   "private": true,
   "scripts": {
-    "start": "docusaurus start",
+    "start": "docusaurus start --no-open",
     "build": "docusaurus build",
     "serve": "docusaurus serve",
     "clear": "docusaurus clear",
