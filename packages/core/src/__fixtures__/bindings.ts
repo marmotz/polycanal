@@ -22,3 +22,22 @@ export interface TestEventBinding extends EventBinding {
 export function wsLike(name: string): TestEventBinding {
   return { driver: 'test-ws', family: 'event', sources: [], name };
 }
+
+type PathParams<TPath extends string> = TPath extends `${string}:${infer TParam}/${infer TRest}`
+  ? TParam | PathParams<`/${TRest}`>
+  : TPath extends `${string}:${infer TParam}`
+    ? TParam
+    : never;
+
+/** REST-like binding declaring its path parameters as required fields. */
+export function restPath<const TPath extends string>(
+  method: string,
+  path: TPath,
+): TestRestBinding & { readonly requires: { readonly [K in PathParams<TPath>]: 'path' } } {
+  const params = [...path.matchAll(/:([A-Za-z0-9_]+)/g)].map((match) => match[1] as string);
+
+  return {
+    ...restLike(method, path),
+    requires: Object.fromEntries(params.map((param) => [param, 'path'])) as { [K in PathParams<TPath>]: 'path' },
+  };
+}

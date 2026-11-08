@@ -70,6 +70,23 @@ export type SourcesOf<TFields extends InputFields> = {
       : never;
 }[keyof TFields];
 
+type FieldWire<TField, TName extends string> = TField extends StandardSchemaV1
+  ? TName
+  : TField extends { readonly alias: infer TAlias extends string }
+    ? TAlias
+    : TName;
+
+type FieldSource<TField> = TField extends StandardSchemaV1
+  ? undefined
+  : TField extends { readonly source: infer TSource extends string }
+    ? TSource
+    : undefined;
+
+/** Wire name and explicit source of each field, as a union. */
+export type WiresOf<TFields extends InputFields> = {
+  [K in keyof TFields & string]: { readonly wire: FieldWire<TFields[K], K>; readonly source: FieldSource<TFields[K]> };
+}[keyof TFields & string];
+
 /**
  * Result of `input()`. It is itself a Standard Schema validating the whole call object, so an action accepts
  * either an `input()` or any object schema.
@@ -80,6 +97,8 @@ export interface InputDefinition<TFields extends InputFields = InputFields>
   readonly fields: readonly NormalizedField[];
   /** Type-level only: explicit sources used, checked against the action's binding. */
   readonly '~sources'?: SourcesOf<TFields>;
+  /** Type-level only: wire names and sources, checked against the fields the binding requires. */
+  readonly '~wires'?: WiresOf<TFields>;
 }
 
 /**

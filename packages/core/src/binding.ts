@@ -13,6 +13,12 @@ export interface TransportBinding<TFamily extends ChannelFamily = ChannelFamily,
   readonly family: TFamily;
   /** Values accepted as `source` by the `input()` fields of an action using this binding. */
   readonly sources: readonly TSource[];
+  /**
+   * Input fields the binding needs, by wire name, with the source they must use (e.g. REST path parameters:
+   * `{ userId: 'path' }`). A field matches when its source is that one or left to the default rules. Sources listed
+   * here are closed: an input field can only use them explicitly if its wire name is required.
+   */
+  readonly requires?: Readonly<Record<string, TSource>>;
 }
 
 export type ActionBinding<TSource extends string = string> = TransportBinding<'action', TSource>;
@@ -23,13 +29,16 @@ export type EventBinding = TransportBinding<'event'>;
 export type SourceOf<TBinding extends TransportBinding> = TBinding['sources'][number];
 
 /**
- * Encoding of request and response bodies (spec §4, body codecs). Refined with the driver interfaces; JSON is the
- * default codec of every driver.
+ * Encoding of request and response bodies (spec §4, body codecs). Codecs are text based for now; binary formats
+ * (files, form data) will extend this interface. JSON is the default codec of every driver.
  */
 export interface Codec {
+  /** Media type sent and expected, e.g. `application/json`. */
   readonly contentType: string;
-  encode(value: unknown): unknown;
-  decode(body: unknown): unknown | Promise<unknown>;
+  /** Serializes a validated value into a body. */
+  encode(value: unknown): string;
+  /** Parses a received body. An empty body decodes to `undefined`. */
+  decode(text: string): unknown;
 }
 
 /** Free description of an operation, for documentation and OpenAPI / AsyncAPI export. */

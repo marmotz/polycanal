@@ -17,6 +17,58 @@ type NoErrors = Readonly<Record<never, StandardSchemaV1>>;
  */
 export type ActionInput<TSource extends string = string> = StandardSchemaV1 & { readonly '~sources'?: TSource };
 
+/** Required fields of a binding, keeping only literal keys (the index signature of the base type is dropped). */
+type RequiresOf<TBinding> = TBinding extends { readonly requires?: infer TRequires }
+  ? NonNullable<TRequires> extends infer TMap extends Readonly<Record<string, string>>
+    ? { [K in keyof TMap as string extends K ? never : K]: TMap[K] }
+    : Record<never, string>
+  : Record<never, string>;
+
+type DefaultWires<TInput> = TInput extends StandardSchemaV1
+  ? {
+      [K in keyof StandardSchemaV1.InferInput<TInput> & string]: { readonly wire: K; readonly source: undefined };
+    }[keyof StandardSchemaV1.InferInput<TInput> & string]
+  : never;
+
+type WiresOfInput<TInput> = TInput extends undefined
+  ? never
+  : TInput extends { readonly '~wires'?: infer TWires }
+    ? unknown extends TWires
+      ? DefaultWires<TInput>
+      : NonNullable<TWires>
+    : DefaultWires<TInput>;
+
+type MissingWires<TBinding, TInput> = {
+  [K in keyof RequiresOf<TBinding> & string]: [
+    Extract<WiresOfInput<TInput>, { readonly wire: K; readonly source: RequiresOf<TBinding>[K] | undefined }>,
+  ] extends [never]
+    ? K
+    : never;
+}[keyof RequiresOf<TBinding> & string];
+
+type UnexpectedWires<TBinding, TInput> =
+  WiresOfInput<TInput> extends infer TWire
+    ? TWire extends { readonly wire: infer TName; readonly source: infer TSource }
+      ? TSource extends RequiresOf<TBinding>[keyof RequiresOf<TBinding>]
+        ? TName extends keyof RequiresOf<TBinding>
+          ? never
+          : TName
+        : never
+      : never
+    : never;
+
+/**
+ * Type-level check of the fields a binding requires (e.g. REST path parameters). Resolves to `unknown` when the input
+ * matches, or to an object with a readable `~error` otherwise.
+ */
+export type BindingCheck<TBinding, TInput> = [MissingWires<TBinding, TInput>] extends [never]
+  ? [UnexpectedWires<TBinding, TInput>] extends [never]
+    ? unknown
+    : {
+        readonly '~error': `input field "${UnexpectedWires<TBinding, TInput> & string}" is not expected by the binding`;
+      }
+  : { readonly '~error': `input is missing the field "${MissingWires<TBinding, TInput>}" required by the binding` };
+
 export interface ActionDefinition<
   TBinding extends ActionBinding = ActionBinding,
   TOutput extends StandardSchemaV1 = StandardSchemaV1,
@@ -53,12 +105,16 @@ export function action<
   TOutput extends StandardSchemaV1,
   TInput extends ActionInput<SourceOf<TBinding>> | undefined = undefined,
   const TErrors extends ErrorSchemas = NoErrors,
->(config: ActionConfig<TBinding, TOutput, TInput, TErrors>): ActionDefinition<TBinding, TOutput, TInput, TErrors> {
+>(
+  config: ActionConfig<TBinding, TOutput, TInput, TErrors> & BindingCheck<TBinding, TInput>,
+): ActionDefinition<TBinding, TOutput, TInput, TErrors> {
   checkBinding(config.transport, 'action');
 
   if (config.input !== undefined) {
     checkActionInput(config.input, config.transport);
   }
+
+  checkRequiredFields(config.input, config.transport);
 
   if (!isStandardSchema(config.output)) {
     throw new ContractDefinitionError('action output must be a Standard Schema');
@@ -159,6 +215,49 @@ function checkBinding(binding: TransportBinding, family: TransportBinding['famil
     throw new ContractDefinitionError(
       `driver "${binding.driver}" binding carries ${binding.family} channels, it cannot be used for an ${family}`,
     );
+  }
+}
+
+function checkRequiredFields(value: StandardSchemaV1 | undefined, binding: ActionBinding): void {
+  const requires = binding.requires ?? {};
+  const required = Object.entries(requires);
+
+  if (required.length === 0) {
+    return;
+  }
+
+  if (value === undefined) {
+    throw new ContractDefinitionError(
+      `driver "${binding.driver}" binding requires the input fields ${required.map(([wire]) => `"${wire}"`).join(', ')}`,
+    );
+  }
+
+  // Plain object schemas are opaque at runtime: their keys are only checked at compile time
+  if (!isInputDefinition(value)) {
+    return;
+  }
+
+  for (const [wire, source] of required) {
+    const match = value.fields.some(
+      (field) => field.wireName === wire && (field.source === undefined || field.source === source),
+    );
+
+    if (!match) {
+      throw new ContractDefinitionError(
+        `input is missing the field "${wire}" (source "${source}") required by driver "${binding.driver}"`,
+      );
+    }
+  }
+
+  const closedSources = new Set(Object.values(requires));
+
+  for (const field of value.fields) {
+    if (field.source !== undefined && closedSources.has(field.source) && !(field.wireName in requires)) {
+      throw new ContractDefinitionError(
+        `input field "${field.name}" uses source "${field.source}" but "${field.wireName}" is not expected by driver ` +
+          `"${binding.driver}" (expected: ${Object.keys(requires).join(', ')})`,
+      );
+    }
   }
 }
 

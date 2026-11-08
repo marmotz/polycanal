@@ -143,6 +143,27 @@ parameters, their responses and their types. From that description, the library 
 **generates** the rest, depending on the source (see above). The result is the types and the validators (Zod at first)
 the front end and the back end use to type, validate and format what they send and receive.
 
+### Driver interfaces (implemented in `@polycanal/core`)
+
+- **Binding** (`TransportBinding`): plain data produced by a driver package, carried by each operation: `driver` name,
+  channel `family`, accepted input `sources`, and `requires`, the input fields the binding needs by wire name (REST
+  path parameters). `requires` is checked at compile time and when the action is defined; a source listed in it is
+  closed (a field can only use it explicitly if its wire name is required).
+- **Transport driver** (`TransportDriver`): client-side implementation selected by the binding's `driver` name.
+  - Actions: `prepare(call)` builds the native request (body encoded by the codec), `send(request)` carries it through
+    the interceptor chain and rejects only on transport failures, `read(response)` turns it into an outcome
+    (`{ ok: true, body }` or `{ ok: false, key, body }`, `key` being the HTTP status for REST). The client validates
+    the input before `prepare` and the outcome after `read`.
+  - Events: `publish(call, message)` and `subscribe(call, listener, onError)`; the client validates both directions.
+  - Interceptors: `(request, next, context) => Promise<response>`, typed by the driver's native request and response.
+- **Codec**: text based for now (`encode(value) => string`, `decode(text) => unknown`); `jsonCodec` is the default.
+- **Validation driver** (`ValidationDriver`): runtime validation goes through Standard Schema for every library, so a
+  validation driver only generates schema source code from JSON Schema (`generate`), and optionally converts its
+  schemas to JSON Schema (`toJsonSchema`). `toJsonSchema()` in the core uses Standard JSON Schema, and turns schemas
+  accepting only `undefined` (`z.void()`, no body) into the `x-polycanal-void` marker that JSON Schema cannot express.
+- **Errors**: `PolycanalError` with `kind` (`input`, `output`, `server`, `transport`), `operation`, `driver`, `key`,
+  `data` (error body, validated when the action declares a schema for it), `issues`, `response`, `cause`.
+
 ## 4. Channel model
 
 Two families, with different operations:
