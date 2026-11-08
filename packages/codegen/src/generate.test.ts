@@ -100,7 +100,8 @@ describe('generateContractSource()', () => {
     await server.households.updateMemberRole({ householdId: 'h1', userId: 'u1', toUserId: 'u2', role: 'admin' });
 
     expect(fetchMock.mock.calls[0]?.[0]).toBe('https://api.test/user/u1');
-    expect(fetchMock.mock.calls[0]?.[1]?.body).toBe('{"householdId":"h1","userId":"u2","role":"admin","page":1}');
+    // Sent as given: the server applies the default page
+    expect(fetchMock.mock.calls[0]?.[1]?.body).toBe('{"householdId":"h1","userId":"u2","role":"admin"}');
     await expect(server.auth.login({ email: 'nope', password: 'short' })).rejects.toMatchObject({ kind: 'input' });
   });
 
@@ -214,7 +215,11 @@ describe('generateContractSource()', () => {
     const fetchMock = vi.fn(async (_url: unknown, init?: RequestInit) =>
       Response.json({ id: 'h1', name: JSON.parse(String(init?.body)).name }),
     );
-    const server = createClient(contract, { drivers: [fetchRest({ fetch: fetchMock })] }) as unknown as {
+    // Parsed mode sends the output of the imported schema, which shows its transform ran
+    const server = createClient(contract, {
+      drivers: [fetchRest({ fetch: fetchMock })],
+      send: 'parsed',
+    }) as unknown as {
       households: { rename(input: unknown): Promise<unknown> };
     };
 

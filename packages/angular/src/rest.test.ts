@@ -88,15 +88,11 @@ afterEach(() => {
   seen.length = 0;
 });
 
-/** Lets the client validate the input and hand the request to HttpClient. */
-const flushMicrotasks = () => new Promise((resolve) => setTimeout(resolve));
-
 describe('angularRest()', () => {
   it('sends through HttpClient, Angular interceptors included', async () => {
     const { server, backend } = setup();
 
     const pending = server.households.get({ id: 'h1', expand: true });
-    await flushMicrotasks();
     const request = backend.expectOne('/api/households/h1?expand=true');
     request.flush('{"id":"h1","name":"Home","extra":1}', { headers: { 'Content-Type': 'application/json' } });
 
@@ -111,7 +107,6 @@ describe('angularRest()', () => {
     const { server, backend } = setup({ withCredentials: true });
 
     const pending = server.households.rename({ id: 'h1', name: 'Home' });
-    await flushMicrotasks();
     const request = backend.expectOne('/api/households/h1');
     request.flush('', { status: 204, statusText: 'No Content' });
 
@@ -125,7 +120,6 @@ describe('angularRest()', () => {
     const { server, backend } = setup();
 
     const pending = server.households.get({ id: 'h2' }).catch((error: unknown) => error);
-    await flushMicrotasks();
     backend.expectOne('/api/households/h2').flush('{"message":"not found"}', {
       status: 404,
       statusText: 'Not Found',
@@ -141,17 +135,14 @@ describe('angularRest()', () => {
     const { server, backend } = setup();
 
     const renamed = server.households.rename({ id: 'h1', name: 'Home' });
-    await flushMicrotasks();
     backend.expectOne('/api/households/h1').flush(null, { status: 204, statusText: 'No Content' });
     await renamed;
 
     const read = server.households.get({ id: 'h1' });
-    await flushMicrotasks();
     backend.expectOne('/api/households/h1').flush({ id: 'h1', name: 'Home' });
     await read;
 
     const missing = server.households.get({ id: 'h2' }).catch(() => undefined);
-    await flushMicrotasks();
     backend.expectOne('/api/households/h2').flush({ message: 'not found' }, { status: 404, statusText: 'Not Found' });
     await missing;
 
@@ -166,14 +157,12 @@ describe('angularRest()', () => {
     const { server, backend } = setup();
 
     const pending = server.households.note({ id: 'h1' });
-    await flushMicrotasks();
     backend
       .expectOne('/api/households/h1/note')
       .flush(null, { status: 200, statusText: 'OK', headers: { 'content-type': 'application/json' } });
     await expect(pending).resolves.toBeNull();
 
     const empty = server.households.note({ id: 'h1' });
-    await flushMicrotasks();
     backend.expectOne('/api/households/h1/note').flush(null, { status: 200, statusText: 'OK' });
     await expect(empty).resolves.toBeUndefined();
   });
@@ -182,7 +171,6 @@ describe('angularRest()', () => {
     const { server, backend } = setup();
 
     const pending = server.households.note({ id: 'h1' });
-    await flushMicrotasks();
     backend.expectOne('/api/households/h1/note').flush('<p>hello</p>', { headers: { 'content-type': 'text/html' } });
 
     await expect(pending).resolves.toBe('<p>hello</p>');
@@ -192,7 +180,6 @@ describe('angularRest()', () => {
     const { server, backend } = setup();
 
     const pending = server.households.export({ id: 'h1', format: 'csv' });
-    await flushMicrotasks();
     const request = backend.expectOne('/api/households/h1/export');
     expect(request.request.body).toBe('{"format":"csv"}');
     expect(request.request.responseType).toBe('text');
@@ -210,12 +197,10 @@ describe('angularRest()', () => {
     });
 
     const read = server.households.get({ id: 'h1' }, { context: { tag: 't1' } });
-    await flushMicrotasks();
     backend.expectOne('/api/households/h1').flush({ id: 'h1', name: 'Home' });
     await read;
 
     const renamed = server.households.rename({ id: 'h1', name: 'Home' });
-    await flushMicrotasks();
     backend.expectOne('/api/households/h1').flush(null, { status: 204, statusText: 'No Content' });
     await renamed;
 
@@ -226,7 +211,6 @@ describe('angularRest()', () => {
     const { server, backend } = setup();
 
     const pending = server.households.get({ id: 'h3' }).catch((error: unknown) => error);
-    await flushMicrotasks();
     backend.expectOne('/api/households/h3').error(new ProgressEvent('error'));
 
     expect(await pending).toMatchObject({ kind: 'transport' });
@@ -237,7 +221,6 @@ describe('angularRest()', () => {
     const controller = new AbortController();
 
     const pending = server.households.get({ id: 'h4' }, { signal: controller.signal }).catch((error: unknown) => error);
-    await flushMicrotasks();
     const request = backend.expectOne('/api/households/h4');
     controller.abort();
 

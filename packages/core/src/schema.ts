@@ -19,3 +19,15 @@ export function isStandardSchema(value: unknown): value is StandardSchemaV1 {
 
 /** Flattens an intersection of object types for readable editor tooltips. */
 export type Simplify<T> = { [K in keyof T]: T[K] } & {};
+
+/**
+ * Runs a schema on a value. The client validates through Standard Schema by default; a custom validator can pass
+ * library options that Standard Schema cannot carry (error messages, locale...).
+ */
+export type SchemaValidator = (
+  schema: StandardSchemaV1,
+  value: unknown,
+) => StandardSchemaV1.Result<unknown> | Promise<StandardSchemaV1.Result<unknown>>;
+
+/** Default validator: the schema's own Standard Schema `validate()`. */
+export const standardValidator: SchemaValidator = (schema, value) => schema['~standard'].validate(value);

@@ -1,7 +1,7 @@
 {
   "name": "@polycanal/zod",
   "version": "0.0.0",
-  "description": "Polycanal validation driver for Zod: schema code generation",
+  "description": "Polycanal validation driver for Zod: schema code generation and a runtime validator with parse options",
   "license": "MIT",
   "type": "module",
   "repository": {

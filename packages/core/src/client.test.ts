@@ -12,6 +12,7 @@ import { defineContract } from './contract.js';
 import { action, event } from './definition.js';
 import { PolycanalError } from './errors.js';
 import { input } from './input.js';
+import type { SchemaValidator, StandardSchemaV1 } from './schema.js';
 import type { Interceptor } from './transport.js';
 
 const contract = defineContract({
@@ -64,12 +65,12 @@ describe('createClient(): actions', () => {
     ]);
   });
 
-  it('sends the output of the input schema (defaults applied)', async () => {
+  it('sends the argument as given, the server applying defaults and transforms', async () => {
     const memory = memoryDriver(() => ({ status: 200, body: 3 }));
     const server = createClient(contract, { drivers: [memory.driver] });
 
     await expect(server.households.analyses()).resolves.toBe(3);
-    expect(memory.sent[0]?.input).toEqual({ page: 1 });
+    expect(memory.sent[0]?.input).toEqual({});
   });
 
   it('calls an action without input', async () => {
@@ -338,5 +339,195 @@ describe('createClient(): events', () => {
     expect(() => server.notifications.subscribe(() => {})).toThrow(
       'notifications: no driver "test-ws" carrying events was given to createClient()',
     );
+  });
+});
+
+describe('createClient(): validator', () => {
+  const upper: SchemaValidator = (schema, value) => {
+    const result = schema['~standard'].validate(value) as StandardSchemaV1.Result<unknown>;
+
+    return result.issues ? { issues: result.issues.map((issue) => ({ ...issue, message: 'INVALID' })) } : result;
+  };
+
+  it('runs input fields, responses and error bodies through the validator', async () => {
+    const seen: unknown[] = [];
+    const validator: SchemaValidator = (schema, value) => {
+      seen.push(value);
+
+      return schema['~standard'].validate(value);
+    };
+    const memory = memoryDriver(() => ({ status: 200, body: 3 }));
+    const server = createClient(contract, { drivers: [memory.driver], validator });
+
+    await server.households.analyses({ page: 2 });
+
+    // input() runs each field through the validator, not the whole call object
+    expect(seen).toEqual([2, 3]);
+  });
+
+  it('reports the issues of the validator', async () => {
+    const memory = memoryDriver(() => ({ status: 200, body: { token: 't' } }));
+    const server = createClient(contract, { drivers: [memory.driver], validator: upper });
+
+    const error = await rejection(server.auth.login({ email: 'not-an-email', password: 'pw' }));
+
+    expect(error.issues?.[0]).toMatchObject({ message: 'INVALID', path: ['email'] });
+  });
+
+  it('runs event messages through the validator', async () => {
+    const memory = memoryDriver(() => ({ status: 200, body: undefined }), { name: 'test-ws' });
+    const server = createClient(contract, { drivers: [memory.driver], validator: upper });
+
+    const error = await rejection(server.chat.publish({ text: '' }));
+
+    expect(error.issues?.[0]?.message).toBe('INVALID');
+  });
+});
+
+describe('createClient(): mapError', () => {
+  class AppError extends Error {
+    constructor(readonly source: PolycanalError) {
+      super(source.message);
+    }
+  }
+
+  const mapError = (error: PolycanalError) => new AppError(error);
+
+  it('throws what mapError returns for every kind of failure', async () => {
+    const invalid = memoryDriver(() => ({ status: 200, body: { token: 't' } }));
+    const server = createClient(contract, { drivers: [invalid.driver], mapError });
+
+    const input = await server.auth.login({ email: 'x', password: 'pw' }).catch((error: unknown) => error);
+    expect(input).toBeInstanceOf(AppError);
+    expect((input as AppError).source.kind).toBe('input');
+
+    const failing = memoryDriver(() => ({ status: 401, body: { reason: 'nope' } }));
+    const other = createClient(contract, { drivers: [failing.driver], mapError });
+    const server401 = await other.auth.login({ email: 'a@b.fr', password: 'pw' }).catch((error: unknown) => error);
+    expect((server401 as AppError).source).toMatchObject({ kind: 'server', key: '401', data: { reason: 'nope' } });
+  });
+
+  it('maps the failures of event publications', async () => {
+    const memory = memoryDriver(() => ({ status: 200, body: undefined }), { name: 'test-ws' });
+    const server = createClient(contract, { drivers: [memory.driver], mapError });
+
+    await expect(server.chat.publish({ text: '' })).rejects.toBeInstanceOf(AppError);
+  });
+
+  it('rethrows errors that are not PolycanalError untouched', async () => {
+    const memory = memoryDriver(() => ({ status: 200, body: { token: 't' } }));
+    const boom = new Error('boom');
+    const server = createClient(contract, {
+      drivers: [memory.driver],
+      interceptors: [
+        () => {
+          throw boom;
+        },
+      ],
+      mapError,
+    });
+
+    await expect(server.auth.login({ email: 'a@b.fr', password: 'pw' })).rejects.toBe(boom);
+  });
+});
+
+describe('createClient(): send mode', () => {
+  const sendContract = defineContract({
+    users: {
+      rename: action({
+        transport: restLike('POST', '/users'),
+        input: input({ name: z.string().trim(), page: z.number().default(1) }),
+        output: z.unknown(),
+      }),
+      save: action({
+        transport: restLike('POST', '/save'),
+        input: z.object({ price: z.number().transform((euros) => euros * 100) }),
+        output: z.unknown(),
+      }),
+      list: action({ transport: restLike('POST', '/list'), input: z.array(z.string()), output: z.unknown() }),
+    },
+    chat: event({ transport: wsLike('chat'), send: z.object({ text: z.string().trim() }) }),
+  });
+
+  it('sends the declared fields as given, without their defaults and transforms', async () => {
+    const memory = memoryDriver(() => ({ status: 200, body: null }));
+    const server = createClient(sendContract, { drivers: [memory.driver] });
+
+    await server.users.rename({ name: '  Ada ', extra: true } as never);
+    await server.users.save({ price: 12, extra: true } as never);
+    await server.users.list(['a']);
+
+    expect(memory.sent.map(({ input }) => input)).toEqual([{ name: '  Ada ' }, { price: 12 }, ['a']]);
+  });
+
+  it('sends the parsed value in parsed mode, for the client or an operation', async () => {
+    const memory = memoryDriver(() => ({ status: 200, body: null }));
+    const parsed = createClient(sendContract, { drivers: [memory.driver], send: 'parsed' });
+    const mixed = createClient(sendContract, {
+      drivers: [memory.driver],
+      send: 'parsed',
+      operations: { users: { send: 'raw' }, 'users.save': { send: 'parsed' } },
+    });
+
+    await parsed.users.rename({ name: '  Ada ' });
+    await mixed.users.rename({ name: '  Ada ' });
+    await mixed.users.save({ price: 12 });
+
+    expect(memory.sent.map(({ input }) => input)).toEqual([
+      { name: 'Ada', page: 1 },
+      { name: '  Ada ' },
+      { price: 1200 },
+    ]);
+  });
+
+  it('publishes event messages as given', async () => {
+    const memory = memoryDriver(() => ({ status: 200, body: undefined }), { name: 'test-ws' });
+    const server = createClient(sendContract, { drivers: [memory.driver] });
+
+    await server.chat.publish({ text: ' hi ' });
+
+    expect(memory.published).toEqual([{ operation: 'chat', message: { text: ' hi ' } }]);
+  });
+});
+
+describe('createClient(): synchronous sending', () => {
+  it('sends the request during the call when the schemas and the driver are synchronous', () => {
+    const memory = memoryDriver(() => ({ status: 200, body: { token: 't' } }));
+    const server = createClient(contract, {
+      drivers: [memory.driver],
+      interceptors: [(request, next) => next(request)],
+    });
+
+    const pending = server.auth.login({ email: 'ada@example.com', password: 'pw' });
+
+    expect(memory.sent).toHaveLength(1);
+    return expect(pending).resolves.toEqual({ token: 't' });
+  });
+
+  it('waits for an async schema before sending', async () => {
+    const asyncContract = defineContract({
+      check: action({
+        transport: restLike('POST', '/check'),
+        input: z.object({ code: z.string().refine(async (code) => code === 'ok') }),
+        output: z.unknown(),
+      }),
+    });
+    const memory = memoryDriver(() => ({ status: 200, body: null }));
+    const server = createClient(asyncContract, { drivers: [memory.driver] });
+
+    const pending = server.check({ code: 'ok' });
+
+    expect(memory.sent).toHaveLength(0);
+    await pending;
+    expect(memory.sent).toHaveLength(1);
+  });
+
+  it('rejects, without throwing, a synchronous failure before sending', async () => {
+    const memory = memoryDriver(() => ({ status: 200, body: null }));
+    const server = createClient(contract, { drivers: [memory.driver] });
+
+    const pending = server.auth.login({ email: 'x', password: 'pw' });
+
+    await expect(pending).rejects.toMatchObject({ kind: 'input' });
   });
 });

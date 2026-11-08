@@ -1,5 +1,11 @@
 import { ContractDefinitionError } from './errors.js';
-import { isStandardSchema, type Simplify, type StandardSchemaV1 } from './schema.js';
+import {
+  isStandardSchema,
+  type SchemaValidator,
+  type Simplify,
+  type StandardSchemaV1,
+  standardValidator,
+} from './schema.js';
 
 /** Full form of an `input()` field. */
 export interface FieldDescriptor<TSchema extends StandardSchemaV1 = StandardSchemaV1, TSource extends string = string> {
@@ -121,7 +127,7 @@ export function input<const TFields extends InputFields>(fields: TFields): Input
     '~standard': {
       version: 1,
       vendor: 'polycanal',
-      validate: (value) => validateFields(normalized, value),
+      validate: (value) => validateFields(normalized, value, standardValidator),
     },
   } as InputDefinition<TFields>;
 }
@@ -204,9 +210,11 @@ function checkFields(fields: readonly NormalizedField[]): void {
 
 type FieldResult = StandardSchemaV1.Result<unknown>;
 
-function validateFields(
+/** Validates a call object field by field, each field schema running through `validator`. */
+export function validateFields(
   fields: readonly NormalizedField[],
   value: unknown,
+  validator: SchemaValidator,
 ): StandardSchemaV1.Result<Record<string, unknown>> | Promise<StandardSchemaV1.Result<Record<string, unknown>>> {
   // No argument at all is an empty object: an input with optional fields only can be omitted
   const candidate = value === undefined ? {} : value;
@@ -216,7 +224,7 @@ function validateFields(
   }
 
   const record = candidate as Record<string, unknown>;
-  const results = fields.map((field) => field.schema['~standard'].validate(record[field.name]));
+  const results = fields.map((field) => validator(field.schema, record[field.name]));
 
   if (results.some((result) => result instanceof Promise)) {
     return Promise.all(results).then((resolved) => mergeResults(fields, resolved));

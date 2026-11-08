@@ -8,4 +8,5 @@ export const zodDriver: ValidationDriver = {
   optional: (schema) => ({ code: `${schema.code}.optional()`, imports: schema.imports }),
 };
 
+export { type ZodParseParams, zodValidator } from './validator.js';
 export { generateZod };

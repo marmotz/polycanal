@@ -1,8 +1,9 @@
 import { type ActionModel, actionModel, type ContractTree, type EventModel, eventModel, toModel } from './contract.js';
 import { type ActionDefinition, type EventDefinition, isDefinition } from './definition.js';
-import { PolycanalError } from './errors.js';
+import { isPolycanalError, PolycanalError } from './errors.js';
 import type { ActionInputOf, ActionOutputOf, EventReceiveOf, EventSendOf } from './infer.js';
-import type { StandardSchemaV1 } from './schema.js';
+import { isInputDefinition, validateFields } from './input.js';
+import { type SchemaValidator, type StandardSchemaV1, standardValidator } from './schema.js';
 import type {
   ActionCall,
   ActionOutcome,
@@ -75,8 +76,18 @@ type ClientNode<TNode> = TNode extends ActionDefinition
 /** Typed client of a contract: same tree, with methods for actions and handles for events. */
 export type Client<TTree extends ContractTree> = { readonly [K in keyof TTree]: ClientNode<TTree[K]> };
 
+/**
+ * What a call sends once its argument is valid:
+ * - `raw`: the argument as the caller gave it, restricted to the declared fields. The server validates it again with
+ *   the same schemas and applies the transforms and defaults once;
+ * - `parsed`: the output of the schemas (transforms and defaults applied), for a server that does not validate again.
+ */
+export type SendMode = 'raw' | 'parsed';
+
 export interface OperationOptions {
   readonly interceptors?: readonly AnyInterceptor[];
+  /** What the calls of this operation or namespace send. Default: the `send` of the client. */
+  readonly send?: SendMode;
 }
 
 export interface ClientOptions {
@@ -90,6 +101,18 @@ export interface ClientOptions {
    * Their interceptors run after the global and driver ones, shorter prefixes first.
    */
   readonly operations?: Readonly<Record<string, OperationOptions>>;
+  /** What a call sends once its argument is valid. Default: `'raw'`. */
+  readonly send?: SendMode;
+  /**
+   * Runs every schema of the contract (input fields, responses, error bodies, event messages). Default: Standard
+   * Schema. Use it to pass library options, e.g. `zodValidator({ error: frenchMessages })` from `@polycanal/zod`.
+   */
+  readonly validator?: SchemaValidator;
+  /**
+   * Turns the `PolycanalError` of a failed action call or event publication into the error the application throws
+   * (its own error class, a translated message...). Other errors are rethrown untouched.
+   */
+  readonly mapError?: (error: PolycanalError) => unknown;
 }
 
 /**
@@ -113,7 +136,8 @@ function build(tree: ContractTree, prefix: readonly string[], runtime: ClientRun
       node[name] = build(child, path, runtime);
     } else if (child.kind === 'action') {
       const operation = actionModel(child, path);
-      node[name] = (input: unknown, callOptions?: CallOptions) => runtime.call(operation, input, callOptions);
+      node[name] = (input: unknown, callOptions?: CallOptions) =>
+        runtime.mapped(runtime.call(operation, input, callOptions));
     } else {
       node[name] = runtime.eventHandle(eventModel(child, path));
     }
@@ -122,17 +146,89 @@ function build(tree: ContractTree, prefix: readonly string[], runtime: ClientRun
   return node;
 }
 
+/** Builds the `PolycanalError` of a failed call, located at its operation and driver. */
+type Fail = (
+  message: string,
+  details: Omit<ConstructorParameters<typeof PolycanalError>[1], 'operation' | 'driver'>,
+) => PolycanalError;
+
 class ClientRuntime {
   private readonly drivers: ReadonlyMap<string, TransportDriver>;
+  private readonly validator: SchemaValidator;
 
   constructor(private readonly options: ClientOptions) {
     const list = Array.isArray(options.drivers)
       ? options.drivers
       : Object.values(options.drivers as Record<string, TransportDriver>);
     this.drivers = new Map(list.map((driver) => [driver.name, driver]));
+    this.validator = options.validator ?? standardValidator;
   }
 
-  async call(operation: ActionModel, rawInput: unknown, callOptions: CallOptions = {}): Promise<unknown> {
+  /** Applies `mapError` to the `PolycanalError` a call rejects with. */
+  mapped<T>(promise: Promise<T>): Promise<T> {
+    const { mapError } = this.options;
+
+    if (mapError === undefined) {
+      return promise;
+    }
+
+    return promise.catch((error: unknown) => {
+      throw isPolycanalError(error) ? mapError(error) : error;
+    });
+  }
+
+  /**
+   * Runs a schema through the validator; an `input()` runs each of its field schemas through it. The result is
+   * synchronous when the schema is.
+   */
+  run(
+    schema: StandardSchemaV1,
+    value: unknown,
+  ): StandardSchemaV1.Result<unknown> | Promise<StandardSchemaV1.Result<unknown>> {
+    return isInputDefinition(schema)
+      ? validateFields(schema.fields, value, this.validator)
+      : this.validator(schema, value);
+  }
+
+  async validate(schema: StandardSchemaV1, value: unknown): Promise<StandardSchemaV1.Result<unknown>> {
+    return this.run(schema, value);
+  }
+
+  /** The value a valid argument sends, depending on the send mode of the operation. */
+  payload(id: string, schema: StandardSchemaV1, raw: unknown, parsed: unknown): unknown {
+    if (this.sendMode(id) === 'parsed') {
+      return parsed;
+    }
+
+    if (isInputDefinition(schema)) {
+      const record = (raw ?? {}) as Record<string, unknown>;
+
+      return Object.fromEntries(
+        schema.fields
+          .filter((field) => record[field.name] !== undefined)
+          .map((field) => [field.name, record[field.name]]),
+      );
+    }
+
+    // Keys the schema dropped (unknown ones) are not sent; keys it added (defaults) are left to the server
+    return isRecord(raw) && isRecord(parsed)
+      ? Object.fromEntries(Object.entries(raw).filter(([key]) => key in parsed))
+      : raw;
+  }
+
+  private sendMode(id: string): SendMode {
+    const own = Object.entries(this.options.operations ?? {})
+      .filter(([key, options]) => (id === key || id.startsWith(`${key}.`)) && options.send !== undefined)
+      .sort(([a], [b]) => b.length - a.length)[0];
+
+    return own?.[1].send ?? this.options.send ?? 'raw';
+  }
+
+  /**
+   * Calls an action. Everything up to the driver's `send()` runs synchronously when the schemas and the driver are
+   * synchronous: the request leaves during the call itself, not a microtask later.
+   */
+  call(operation: ActionModel, rawInput: unknown, callOptions: CallOptions = {}): Promise<unknown> {
     const driverName = operation.transport.driver;
     const fail = (
       message: string,
@@ -143,47 +239,65 @@ class ClientRuntime {
     const transport = driver?.action;
 
     if (driver === undefined || transport === undefined) {
-      throw fail(`no driver "${driverName}" carrying actions was given to createClient()`, { kind: 'transport' });
+      return Promise.reject(
+        fail(`no driver "${driverName}" carrying actions was given to createClient()`, { kind: 'transport' }),
+      );
     }
 
-    let input: unknown;
+    const sendRequest = (input: unknown): Promise<unknown> => {
+      const call: ActionCall = {
+        operation,
+        input,
+        signal: callOptions.signal,
+        context: callOptions.context ?? {},
+      };
+      const interceptors = [
+        ...(this.options.interceptors ?? []),
+        ...(driver.interceptors ?? []),
+        ...this.operationInterceptors(operation.id),
+        ...(callOptions.interceptors ?? []),
+      ];
+      const context: InterceptorContext = { call, driver: driverName };
+      const send = (nativeRequest: unknown) =>
+        attempt(
+          () => transport.send(nativeRequest, call),
+          (cause) => fail('could not send the request', { kind: 'transport', cause }),
+        );
 
-    if (operation.input !== undefined) {
-      const result = await operation.input.schema['~standard'].validate(rawInput);
-
-      if (result.issues) {
-        throw fail('invalid input', { kind: 'input', issues: result.issues });
-      }
-
-      input = result.value;
-    }
-
-    const call: ActionCall = {
-      operation,
-      input,
-      signal: callOptions.signal,
-      context: callOptions.context ?? {},
+      return Promise.resolve(
+        settle(
+          attemptNow(
+            () => transport.prepare(call),
+            (cause) => fail('could not prepare the request', { kind: 'transport', cause }),
+          ),
+          (request) => chain(interceptors, send, context)(request),
+        ),
+      ).then((response) => this.receive(operation, call, response, fail));
     };
 
-    const request = await attempt(
-      () => transport.prepare(call),
-      (cause) => fail('could not prepare the request', { kind: 'transport', cause }),
-    );
+    try {
+      if (operation.input === undefined) {
+        return sendRequest(undefined);
+      }
 
-    const interceptors = [
-      ...(this.options.interceptors ?? []),
-      ...(driver.interceptors ?? []),
-      ...this.operationInterceptors(operation.id),
-      ...(callOptions.interceptors ?? []),
-    ];
-    const context: InterceptorContext = { call, driver: driverName };
-    const send = (nativeRequest: unknown) =>
-      attempt(
-        () => transport.send(nativeRequest, call),
-        (cause) => fail('could not send the request', { kind: 'transport', cause }),
+      const { schema } = operation.input;
+
+      return Promise.resolve(
+        settle(this.run(schema, rawInput), (result) => {
+          if (result.issues) {
+            throw fail('invalid input', { kind: 'input', issues: result.issues });
+          }
+
+          return sendRequest(this.payload(operation.id, schema, rawInput, result.value));
+        }),
       );
-    const response = await chain(interceptors, send, context)(request);
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
 
+  private async receive(operation: ActionModel, call: ActionCall, response: unknown, fail: Fail): Promise<unknown> {
+    const transport = this.drivers.get(operation.transport.driver)?.action as NonNullable<TransportDriver['action']>;
     const outcome: ActionOutcome = await attempt(
       () => transport.read(response, call),
       (cause) => fail('could not read the response', { kind: 'transport', cause, response }),
@@ -191,7 +305,7 @@ class ClientRuntime {
 
     if (!outcome.ok) {
       const schema = operation.errors[outcome.key];
-      const result = schema === undefined ? undefined : await schema['~standard'].validate(outcome.body);
+      const result = schema === undefined ? undefined : await this.validate(schema, outcome.body);
 
       throw fail(`server error ${outcome.key}`, {
         kind: 'server',
@@ -202,7 +316,7 @@ class ClientRuntime {
       });
     }
 
-    const result = await operation.output['~standard'].validate(outcome.body);
+    const result = await this.validate(operation.output, outcome.body);
 
     if (result.issues) {
       throw fail('invalid response', { kind: 'output', issues: result.issues, response });
@@ -231,21 +345,25 @@ class ClientRuntime {
     const { send, receive } = operation;
 
     if (send !== undefined) {
-      handle.publish = async (message: unknown, options: { context?: CallContext } = {}) => {
+      const publish = async (message: unknown, options: { context?: CallContext } = {}) => {
         const events = transport();
-        const result = await send['~standard'].validate(message);
+        const result = await this.validate(send, message);
 
         if (result.issues) {
           throw fail('invalid message', { kind: 'input', issues: result.issues });
         }
 
         const call: EventCall = { operation, context: options.context ?? {} };
+        const payload = this.payload(operation.id, send, message, result.value);
 
         await attempt(
-          () => events.publish(call, result.value),
+          () => events.publish(call, payload),
           (cause) => fail('could not publish the message', { kind: 'transport', cause }),
         );
       };
+
+      handle.publish = (message: unknown, options?: { context?: CallContext }) =>
+        this.mapped(publish(message, options));
     }
 
     if (receive !== undefined) {
@@ -257,7 +375,7 @@ class ClientRuntime {
         return events.subscribe(
           call,
           (raw) => {
-            validateMessage(receive, raw).then(
+            this.validate(receive, raw).then(
               (result) => {
                 if (result.issues) {
                   onError(fail('invalid message received', { kind: 'output', issues: result.issues, response: raw }));
@@ -284,8 +402,32 @@ class ClientRuntime {
   }
 }
 
-async function validateMessage(schema: StandardSchemaV1, value: unknown): Promise<StandardSchemaV1.Result<unknown>> {
-  return schema['~standard'].validate(value);
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isPromiseLike<T>(value: T | PromiseLike<T>): value is PromiseLike<T> {
+  return typeof (value as { then?: unknown } | null)?.then === 'function';
+}
+
+/** Applies `next` right away to a plain value, or once a promise resolves. */
+function settle<T, U>(value: T | PromiseLike<T>, next: (value: T) => U | PromiseLike<U>): U | PromiseLike<U> {
+  return isPromiseLike(value) ? value.then(next) : next(value);
+}
+
+/** `attempt()` that stays synchronous when `task` is. */
+function attemptNow<T>(task: () => T | PromiseLike<T>, wrap: (cause: unknown) => PolycanalError): T | Promise<T> {
+  const rethrow = (cause: unknown): never => {
+    throw cause instanceof PolycanalError ? cause : wrap(cause);
+  };
+
+  try {
+    const value = task();
+
+    return isPromiseLike(value) ? Promise.resolve(value).catch(rethrow) : value;
+  } catch (cause) {
+    return rethrow(cause);
+  }
 }
 
 /** Runs `task`, turning any failure that is not already a `PolycanalError` into one. */

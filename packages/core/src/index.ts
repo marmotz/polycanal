@@ -18,6 +18,7 @@ export {
   type OperationOptions,
   type RequestOf,
   type ResponseOf,
+  type SendMode,
   type SubscribeOptions,
 } from './client.js';
 export { jsonCodec, matchesContentType } from './codec.js';
@@ -64,7 +65,8 @@ export {
   type OutputOf,
   type WiresOf,
 } from './input.js';
-export { isStandardSchema, type StandardSchemaV1 } from './schema.js';
+export { validateJsonResponse } from './response.js';
+export { isStandardSchema, type SchemaValidator, type StandardSchemaV1, standardValidator } from './schema.js';
 export type {
   ActionCall,
   ActionOutcome,
