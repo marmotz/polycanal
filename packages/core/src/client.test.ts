@@ -180,6 +180,30 @@ describe('createClient(): actions', () => {
     expect(handler.mock.calls[0]?.[1]).toMatchObject({ signal: controller.signal, context: { tenant: 't1' } });
   });
 
+  it('passes the progress callbacks to the driver', async () => {
+    const handler = vi.fn<MemoryHandler>(() => ({ status: 200, body: [] }));
+    const server = createClient(contract, { drivers: [memoryDriver(handler).driver] });
+    const onUploadProgress = vi.fn();
+    const onDownloadProgress = vi.fn();
+
+    await server.households.list(undefined, { onUploadProgress, onDownloadProgress });
+
+    const call = handler.mock.calls[0]?.[1];
+    expect(call?.onUploadProgress).toBe(onUploadProgress);
+    expect(call?.onDownloadProgress).toBe(onDownloadProgress);
+  });
+
+  it('leaves the progress callbacks out of the call when not given', async () => {
+    const handler = vi.fn<MemoryHandler>(() => ({ status: 200, body: [] }));
+    const server = createClient(contract, { drivers: [memoryDriver(handler).driver] });
+
+    await server.households.list();
+
+    const call = handler.mock.calls[0]?.[1];
+    expect(call).not.toHaveProperty('onUploadProgress');
+    expect(call).not.toHaveProperty('onDownloadProgress');
+  });
+
   it('rejects a malformed contract', () => {
     expect(() => createClient({ broken: 1 } as never, { drivers: [] })).toThrow('broken: expected an action');
   });

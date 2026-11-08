@@ -11,6 +11,7 @@ import type {
   EventCall,
   Interceptor,
   InterceptorContext,
+  ProgressOptions,
   TransportDriver,
 } from './transport.js';
 
@@ -24,7 +25,7 @@ export type ResponseOf<TBinding> = TBinding extends { readonly '~response'?: inf
 // biome-ignore lint/suspicious/noExplicitAny: the request and response types depend on the driver of each call
 export type AnyInterceptor = Interceptor<any, any>;
 
-export interface CallOptions<TRequest = unknown, TResponse = unknown> {
+export interface CallOptions<TRequest = unknown, TResponse = unknown> extends ProgressOptions {
   readonly signal?: AbortSignal;
   /** Free data visible to interceptors and drivers. */
   readonly context?: CallContext;
@@ -250,6 +251,8 @@ class ClientRuntime {
         input,
         signal: callOptions.signal,
         context: callOptions.context ?? {},
+        ...(callOptions.onUploadProgress === undefined ? {} : { onUploadProgress: callOptions.onUploadProgress }),
+        ...(callOptions.onDownloadProgress === undefined ? {} : { onDownloadProgress: callOptions.onDownloadProgress }),
       };
       const interceptors = [
         ...(this.options.interceptors ?? []),

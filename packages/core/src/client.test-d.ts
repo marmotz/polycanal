@@ -7,6 +7,7 @@ import { type CallOptions, type Client, createClient } from './client.js';
 import { defineContract } from './contract.js';
 import { action, event } from './definition.js';
 import { input } from './input.js';
+import type { DownloadProgress, FileProgress, UploadProgress } from './transport.js';
 
 interface NativeRequest {
   readonly url: string;
@@ -76,6 +77,16 @@ describe('Client types', () => {
     expectTypeOf(server.typed).parameter(1).toEqualTypeOf<CallOptions<NativeRequest, NativeResponse> | undefined>();
     expectTypeOf(server.list).parameter(1).toEqualTypeOf<CallOptions<MemoryRequest, MemoryResponse> | undefined>();
     expectTypeOf(server.untyped).parameter(1).toEqualTypeOf<CallOptions<unknown, unknown> | undefined>();
+  });
+
+  it('types the progress callbacks of a call', () => {
+    server.list(undefined, {
+      onUploadProgress: (progress) => {
+        expectTypeOf(progress).toEqualTypeOf<UploadProgress>();
+        expectTypeOf(progress.files).toEqualTypeOf<readonly FileProgress[]>();
+      },
+      onDownloadProgress: (progress) => expectTypeOf(progress).toEqualTypeOf<DownloadProgress>(),
+    });
   });
 
   it('exposes publish and subscribe according to the event schemas', () => {

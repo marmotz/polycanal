@@ -72,11 +72,15 @@ export type {
   ActionOutcome,
   ActionTransport,
   CallContext,
+  DownloadProgress,
   EventCall,
   EventTransport,
+  FileProgress,
   Interceptor,
   InterceptorContext,
+  ProgressOptions,
   TransportDriver,
+  UploadProgress,
 } from './transport.js';
 export {
   type BindingEmitter,

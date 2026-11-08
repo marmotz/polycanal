@@ -3,8 +3,44 @@ import type { ActionModel, EventModel } from './contract.js';
 /** Free data attached to a call, visible to interceptors and drivers (e.g. a tenant, a retry flag). */
 export type CallContext = Readonly<Record<string, unknown>>;
 
+/** Upload progress of a request body, reported by drivers that can measure it. */
+export interface UploadProgress {
+  /** Bytes sent, for the whole request. */
+  readonly loaded: number;
+  /** Size of the whole request, `undefined` when unknown. */
+  readonly total: number | undefined;
+  /** Estimated progress of each file, in body order. */
+  readonly files: readonly FileProgress[];
+}
+
+/** Estimated upload progress of one file of a request body. */
+export interface FileProgress {
+  /** Name of the input field (wire name). */
+  readonly field: string;
+  /** `File.name`, `undefined` for a plain `Blob`. */
+  readonly name: string | undefined;
+  readonly loaded: number;
+  readonly total: number;
+}
+
+/** Download progress of a response body, reported by drivers that can measure it. */
+export interface DownloadProgress {
+  readonly loaded: number;
+  /** From `Content-Length`, `undefined` when absent (compressed or chunked response). */
+  readonly total: number | undefined;
+}
+
+/**
+ * Progress callbacks of a call. A driver that cannot measure progress ignores them. An interceptor that replays the
+ * request (calling `next` twice) reports the progress again from zero.
+ */
+export interface ProgressOptions {
+  readonly onUploadProgress?: (progress: UploadProgress) => void;
+  readonly onDownloadProgress?: (progress: DownloadProgress) => void;
+}
+
 /** An action call, after its input was validated. */
-export interface ActionCall {
+export interface ActionCall extends ProgressOptions {
   readonly operation: ActionModel;
   /** Validated input (output of the input schema), `undefined` when the action has no input. */
   readonly input: unknown;
