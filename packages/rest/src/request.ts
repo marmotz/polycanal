@@ -1,6 +1,7 @@
 import type { ActionModel, Codec } from '@polycanal/core';
 import { type HttpMethod, isRestBinding, QUERY_METHODS, type RestSource } from './binding.js';
 import { type HttpRequest, lowercaseKeys } from './http.js';
+import { encodeMultipart } from './multipart.js';
 
 export interface BuildRequestOptions {
   readonly baseUrl: string;
@@ -24,10 +25,14 @@ export function buildRequest(operation: ActionModel, input: unknown, options: Bu
   }
 
   const method = binding.method as HttpMethod;
+  const multipart = binding.body === 'multipart';
   const fields = mapFields(operation, input, binding.requires, method);
   const path = fillPath(binding.path, fields, operation.id);
   const query = new URLSearchParams();
-  const headers: Record<string, string> = { accept: options.codec.contentType, ...lowercaseKeys(options.headers) };
+  const headers: Record<string, string> = {
+    accept: binding.response === 'blob' ? '*/*' : options.codec.contentType,
+    ...lowercaseKeys(options.headers),
+  };
   const body: Record<string, unknown> = {};
   let rootBody: { value: unknown } | undefined;
 
@@ -58,6 +63,10 @@ export function buildRequest(operation: ActionModel, input: unknown, options: Bu
         }
         break;
       case 'body':
+        if (field.root && multipart) {
+          throw new TypeError(`${operation.id}: root body field "${field.wireName}" cannot be sent as multipart`);
+        }
+
         if (field.root) {
           rootBody = { value: field.value };
         } else {
@@ -67,11 +76,18 @@ export function buildRequest(operation: ActionModel, input: unknown, options: Bu
     }
   }
 
-  const payload = rootBody !== undefined ? rootBody.value : Object.keys(body).length > 0 ? body : undefined;
-  const encoded = payload === undefined ? undefined : options.codec.encode(payload);
+  let encoded: string | FormData | undefined;
 
-  if (encoded !== undefined) {
-    headers['content-type'] = options.codec.contentType;
+  if (multipart) {
+    // No content type: the HTTP client sets it with the boundary
+    encoded = Object.keys(body).length > 0 ? encodeMultipart(body, scalar) : undefined;
+  } else {
+    const payload = rootBody !== undefined ? rootBody.value : Object.keys(body).length > 0 ? body : undefined;
+    encoded = payload === undefined ? undefined : options.codec.encode(payload);
+
+    if (encoded !== undefined) {
+      headers['content-type'] = options.codec.contentType;
+    }
   }
 
   const search = query.toString();
@@ -166,7 +182,7 @@ function setHeader(headers: Record<string, string>, name: string, value: unknown
   }
 }
 
-/** Text form of a value in a path, query string or header: dates as ISO strings, objects as JSON. */
+/** Text form of a value in a path, query string, header or multipart part: dates as ISO strings, objects as JSON. */
 function scalar(value: unknown): string {
   if (value instanceof Date) {
     return value.toISOString();

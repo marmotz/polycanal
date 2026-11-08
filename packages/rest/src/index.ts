@@ -11,5 +11,6 @@ export {
 export { restBindingEmitter } from './emitter.js';
 export { type FetchRestOptions, fetchRest } from './fetch.js';
 export { type HttpRequest, type HttpResponse, type HttpSender, type RawHttpResponse, withHeaders } from './http.js';
+export { fileProgress, type MultipartPart, multipartParts } from './multipart.js';
 export { type BuildRequestOptions, buildRequest } from './request.js';
 export { type RestTransportOptions, restTransport } from './transport.js';

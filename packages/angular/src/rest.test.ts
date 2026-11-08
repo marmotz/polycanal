@@ -36,6 +36,11 @@ const contract = defineContract({
       input: input({ id: z.string() }),
       output: z.unknown(),
     }),
+    upload: action({
+      transport: rest.post('/households/:id/photo', { body: 'multipart' }),
+      input: input({ id: z.string(), photo: z.file() }),
+      output: z.void(),
+    }),
     export: action({
       transport: rest.post('/households/:id/export'),
       input: input({ id: z.string(), format: z.string() }),
@@ -114,6 +119,19 @@ describe('angularRest()', () => {
     expect(request.request.body).toEqual({ name: 'Home' });
     expect(request.request.headers.get('content-type')).toBe('application/json');
     expect(request.request.withCredentials).toBe(true);
+  });
+
+  it('passes a multipart body to HttpClient as FormData', async () => {
+    const { server, backend } = setup();
+    const photo = new File(['png'], 'photo.png', { type: 'image/png' });
+
+    const pending = server.households.upload({ id: 'h1', photo });
+    const request = backend.expectOne('/api/households/h1/photo');
+    request.flush('', { status: 204, statusText: 'No Content' });
+
+    await expect(pending).resolves.toBeUndefined();
+    expect(request.request.body).toBeInstanceOf(FormData);
+    expect((request.request.body as FormData).get('photo')).toBe(photo);
   });
 
   it('turns HTTP error responses into server errors', async () => {

@@ -100,7 +100,7 @@ function jsonBody(request: HttpRequest): unknown {
     return null;
   }
 
-  return matchesContentType(request.headers['content-type'], jsonCodec.contentType)
+  return typeof request.body === 'string' && matchesContentType(request.headers['content-type'], jsonCodec.contentType)
     ? JSON.parse(request.body)
     : request.body;
 }

@@ -7,8 +7,11 @@ export interface HttpRequest {
   readonly url: string;
   /** Header names are lowercase. */
   readonly headers: Readonly<Record<string, string>>;
-  /** Encoded body, `undefined` when there is none. */
-  readonly body: string | undefined;
+  /**
+   * Encoded body, `undefined` when there is none. A `FormData` for a `body: 'multipart'` binding: send it as is, the
+   * HTTP client sets the `Content-Type` with its boundary.
+   */
+  readonly body: string | FormData | undefined;
 }
 
 /** Response as returned by a sender, before decoding. */
@@ -16,7 +19,13 @@ export interface RawHttpResponse {
   readonly status: number;
   /** Header names are lowercase. */
   readonly headers: Readonly<Record<string, string>>;
+  /** Body text, `''` when the sender gives a `blob`. */
   readonly text: string;
+  /**
+   * Binary body, for a `response: 'blob'` binding. A success response is delivered as a `File`; an error response is
+   * read as text and decoded by the codec.
+   */
+  readonly blob?: Blob;
   /**
    * Body the sender already decoded, when its HTTP client parses JSON itself (Angular `HttpClient`). When the key is
    * present, the codec is skipped.

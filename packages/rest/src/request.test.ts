@@ -176,4 +176,111 @@ describe('buildRequest()', () => {
 
     expect(() => build(definition, { q: ['a'] })).toThrow('root field "q" must be an object to be spread');
   });
+
+  describe('multipart body', () => {
+    const upload = action({
+      transport: rest.post('/listings/:id/photos', { body: 'multipart' }),
+      input: input({
+        id: z.string(),
+        cover: z.file(),
+        photos: z.array(z.file()),
+        thumbnail: z.instanceof(Blob).optional(),
+        title: z.string(),
+        price: z.number(),
+        draft: z.boolean(),
+        publishAt: z.date(),
+        meta: z.object({ tags: z.array(z.string()) }),
+        note: z.string().nullable(),
+        missing: z.string().optional(),
+        tag: { source: 'query', schema: z.string() },
+      }),
+      output: z.void(),
+    });
+
+    it('encodes the body fields as FormData, without content type', () => {
+      const cover = new File(['cover'], 'cover.jpg', { type: 'image/jpeg' });
+      const first = new File(['a'], 'a.png', { type: 'image/png' });
+      const second = new File(['bb'], 'b.png', { type: 'image/png' });
+      const thumbnail = new Blob(['t'], { type: 'image/webp' });
+      const request = build(upload, {
+        id: 'l1',
+        cover,
+        photos: [first, second],
+        thumbnail,
+        title: 'Flat',
+        price: 12.5,
+        draft: false,
+        publishAt: new Date('2026-01-02T03:04:05.000Z'),
+        meta: { tags: ['sea'] },
+        note: null,
+        tag: 'x',
+      });
+
+      expect(request).toMatchObject({
+        method: 'POST',
+        url: 'https://api.test/listings/l1/photos?tag=x',
+        headers: { accept: 'application/json' },
+      });
+      expect(request.headers['content-type']).toBeUndefined();
+      expect(request.body).toBeInstanceOf(FormData);
+
+      const form = request.body as FormData;
+
+      expect([...form.keys()]).toEqual([
+        'cover',
+        'photos',
+        'photos',
+        'thumbnail',
+        'title',
+        'price',
+        'draft',
+        'publishAt',
+        'meta',
+      ]);
+      expect(form.get('cover')).toBe(cover);
+      expect(form.getAll('photos')).toEqual([first, second]);
+      expect(form.getAll('photos').map((file) => (file as File).name)).toEqual(['a.png', 'b.png']);
+      expect(form.get('thumbnail')).toBeInstanceOf(Blob);
+      expect((form.get('thumbnail') as Blob).size).toBe(1);
+      expect(form.get('title')).toBe('Flat');
+      expect(form.get('price')).toBe('12.5');
+      expect(form.get('draft')).toBe('false');
+      expect(form.get('publishAt')).toBe('2026-01-02T03:04:05.000Z');
+      expect(form.get('meta')).toBe('{"tags":["sea"]}');
+      expect(form.has('note')).toBe(false);
+      expect(form.has('missing')).toBe(false);
+    });
+
+    it('sends no body when no body field has a value', () => {
+      const definition = action({
+        transport: rest.put('/x', { body: 'multipart' }),
+        input: input({ file: z.file().optional() }),
+        output: z.void(),
+      });
+
+      expect(build(definition, {}).body).toBeUndefined();
+    });
+
+    it('accepts any media type for a blob response', () => {
+      const definition = action({
+        transport: rest.get('/files/:id', { response: 'blob' }),
+        input: input({ id: z.string() }),
+        output: z.file(),
+      });
+
+      expect(build(definition, { id: 'f1' }).headers).toEqual({ accept: '*/*' });
+    });
+
+    it('rejects a root body field', () => {
+      const definition = action({
+        transport: rest.post('/x', { body: 'multipart' }),
+        input: input({ data: { source: 'body', root: true, schema: z.object({ a: z.string() }) } }),
+        output: z.void(),
+      });
+
+      expect(() => build(definition, { data: { a: 'b' } })).toThrow(
+        'op: root body field "data" cannot be sent as multipart',
+      );
+    });
+  });
 });
