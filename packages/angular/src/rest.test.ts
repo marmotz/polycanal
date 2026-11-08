@@ -2,6 +2,8 @@ import {
   HttpClient,
   HttpContext,
   HttpContextToken,
+  HttpEventType,
+  HttpHeaderResponse,
   type HttpInterceptorFn,
   HttpResponse,
   provideHttpClient,
@@ -9,7 +11,16 @@ import {
 } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { action, type Codec, createClient, defineContract, input, isPolycanalError } from '@polycanal/core';
+import {
+  action,
+  type Codec,
+  createClient,
+  type DownloadProgress,
+  defineContract,
+  input,
+  isPolycanalError,
+  type UploadProgress,
+} from '@polycanal/core';
 import { rest } from '@polycanal/rest';
 import { tap } from 'rxjs';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -40,6 +51,17 @@ const contract = defineContract({
       transport: rest.post('/households/:id/photo', { body: 'multipart' }),
       input: input({ id: z.string(), photo: z.file() }),
       output: z.void(),
+    }),
+    gallery: action({
+      transport: rest.post('/households/:id/gallery', { body: 'multipart' }),
+      input: input({ id: z.string(), title: z.string(), photos: z.array(z.file()) }),
+      output: z.void(),
+    }),
+    download: action({
+      transport: rest.get('/households/:id/photo', { response: 'blob' }),
+      input: input({ id: z.string() }),
+      output: z.file(),
+      errors: { 404: z.object({ message: z.string() }) },
     }),
     export: action({
       transport: rest.post('/households/:id/export'),
@@ -132,6 +154,131 @@ describe('angularRest()', () => {
     await expect(pending).resolves.toBeUndefined();
     expect(request.request.body).toBeInstanceOf(FormData);
     expect((request.request.body as FormData).get('photo')).toBe(photo);
+  });
+
+  it('reads a blob response as a file', async () => {
+    const { server, backend } = setup();
+
+    const pending = server.households.download({ id: 'h1' });
+    const request = backend.expectOne('/api/households/h1/photo');
+    expect(request.request.responseType).toBe('blob');
+    expect(request.request.headers.get('accept')).toBe('*/*');
+    request.flush(new Blob(['png']), {
+      headers: { 'content-type': 'image/png', 'content-disposition': 'attachment; filename="home.png"' },
+    });
+
+    const file = await pending;
+    expect(file).toBeInstanceOf(File);
+    expect(file.name).toBe('home.png');
+    expect(file.type).toBe('image/png');
+    expect(await file.text()).toBe('png');
+  });
+
+  it('decodes the error of a blob response as JSON', async () => {
+    const { server, backend } = setup();
+
+    const pending = server.households.download({ id: 'h2' }).catch((error: unknown) => error);
+    backend.expectOne('/api/households/h2/photo').flush(new Blob(['{"message":"not found"}']), {
+      status: 404,
+      statusText: 'Not Found',
+      headers: { 'content-type': 'application/json' },
+    });
+
+    const error = await pending;
+    expect(isPolycanalError(error, { kind: 'server', key: 404 })).toBe(true);
+    expect(error).toMatchObject({ data: { message: 'not found' } });
+  });
+
+  it('does not ask HttpClient for progress events without a progress callback', async () => {
+    const { server, backend } = setup();
+
+    const pending = server.households.upload({ id: 'h1', photo: new File(['png'], 'photo.png') });
+    const request = backend.expectOne('/api/households/h1/photo');
+    expect(request.request.reportProgress).toBe(false);
+    request.flush('', { status: 204, statusText: 'No Content' });
+
+    await expect(pending).resolves.toBeUndefined();
+  });
+
+  it('reports the upload progress of each file from the HttpClient events', async () => {
+    const { server, backend } = setup();
+    const uploads: UploadProgress[] = [];
+    const photos = [new File(['a'.repeat(400)], 'a.png'), new File(['b'.repeat(400)], 'b.png')];
+
+    const pending = server.households.gallery(
+      { id: 'h1', title: 'Home', photos },
+      { onUploadProgress: (progress) => uploads.push(progress) },
+    );
+    const request = backend.expectOne('/api/households/h1/gallery');
+    expect(request.request.reportProgress).toBe(true);
+    expect(request.request.body).toBeInstanceOf(FormData);
+    request.event({ type: HttpEventType.UploadProgress, loaded: 100, total: 1000 });
+    request.event({ type: HttpEventType.UploadProgress, loaded: 900, total: 1000 });
+    request.event(new HttpHeaderResponse({ status: 204 }));
+    request.flush('', { status: 204, statusText: 'No Content' });
+
+    await expect(pending).resolves.toBeUndefined();
+    expect(uploads.map(({ loaded, total }) => ({ loaded, total }))).toEqual([
+      { loaded: 100, total: 1000 },
+      { loaded: 900, total: 1000 },
+      { loaded: 1000, total: 1000 },
+    ]);
+    expect(uploads.map(({ files }) => files.map(({ field, name }) => ({ field, name })))).toEqual([
+      [
+        { field: 'photos', name: 'a.png' },
+        { field: 'photos', name: 'b.png' },
+      ],
+      [
+        { field: 'photos', name: 'a.png' },
+        { field: 'photos', name: 'b.png' },
+      ],
+      [
+        { field: 'photos', name: 'a.png' },
+        { field: 'photos', name: 'b.png' },
+      ],
+    ]);
+    expect(uploads.at(-1)?.files.map(({ loaded, total }) => loaded === total)).toEqual([true, true]);
+  });
+
+  it('reports the download progress from the HttpClient events', async () => {
+    const { server, backend } = setup();
+    const downloads: DownloadProgress[] = [];
+
+    const pending = server.households.download(
+      { id: 'h1' },
+      { onDownloadProgress: (progress) => downloads.push(progress) },
+    );
+    const request = backend.expectOne('/api/households/h1/photo');
+    expect(request.request.reportProgress).toBe(true);
+    request.event({ type: HttpEventType.DownloadProgress, loaded: 1, total: 3 });
+    request.event({ type: HttpEventType.DownloadProgress, loaded: 3 });
+    request.flush(new Blob(['png']), { headers: { 'content-type': 'image/png' } });
+
+    expect(await pending).toBeInstanceOf(File);
+    expect(downloads).toEqual([
+      { loaded: 1, total: 3 },
+      { loaded: 3, total: undefined },
+    ]);
+  });
+
+  it('cancels a request that reports its progress on abort', async () => {
+    const { server, backend } = setup();
+    const controller = new AbortController();
+    const uploads: UploadProgress[] = [];
+
+    const pending = server.households
+      .upload(
+        { id: 'h1', photo: new File(['png'], 'photo.png') },
+        { signal: controller.signal, onUploadProgress: (progress) => uploads.push(progress) },
+      )
+      .catch((error: unknown) => error);
+    const request = backend.expectOne('/api/households/h1/photo');
+    request.event({ type: HttpEventType.UploadProgress, loaded: 1, total: 10 });
+    controller.abort();
+
+    expect(await pending).toMatchObject({ kind: 'transport' });
+    expect(request.cancelled).toBe(true);
+    expect(uploads).toHaveLength(1);
   });
 
   it('turns HTTP error responses into server errors', async () => {

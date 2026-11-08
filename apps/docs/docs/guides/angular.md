@@ -46,6 +46,30 @@ With the default JSON codec, the request body goes to `HttpClient` as a value an
 `HttpClient` itself: the application's Angular interceptors see objects, request and error bodies included, exactly as
 with a direct `HttpClient` call. With another codec, bodies are exchanged as text and decoded by the codec.
 
+A [multipart body](./rest.md#file-uploads) goes to `HttpClient` as `FormData`: Angular interceptors see the
+`FormData`, and the browser sets its `Content-Type` with the boundary. A [`response: 'blob'`](./rest.md#binary-responses)
+binding is requested with `responseType: 'blob'` and resolves to a `File`; its error responses are still decoded as
+JSON.
+
+### Progress
+
+With [`onUploadProgress` or `onDownloadProgress`](./client.md#progress), the request is sent with
+`reportProgress: true` and the `HttpClient` progress events (`UploadProgress`, `DownloadProgress`) feed the callbacks,
+with the estimated progress of each file of a multipart body. When the response starts, every file is complete.
+Without a callback, no progress event is requested.
+
+```ts
+await server.listings.addPhoto({ id: 'l1', photo }, { onUploadProgress: ({ loaded, total }) => render(loaded, total) });
+```
+
+Only the `XMLHttpRequest` backend of `HttpClient` reports the bytes sent. With the `fetch` backend (the default of
+`provideHttpClient()` in Angular 22), `onUploadProgress` is not called: provide `HttpClient` with `withXhr()` to report it.
+`onDownloadProgress` works with both backends.
+
+```ts
+provideHttpClient(withXhr(), withInterceptors([...]));
+```
+
 ### `HttpContext`
 
 Angular interceptors often read an `HttpContextToken` set by the caller. `httpContext` builds it from the call: its

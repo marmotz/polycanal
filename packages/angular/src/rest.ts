@@ -1,16 +1,21 @@
 import {
-  type HttpResponse as AngularHttpResponse,
+  HttpRequest as AngularHttpRequest,
   HttpClient,
   type HttpContext,
   HttpErrorResponse,
+  type HttpEvent,
+  HttpEventType,
   HttpHeaders,
 } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { type ActionCall, jsonCodec, matchesContentType, type TransportDriver } from '@polycanal/core';
 import {
+  fileProgress,
   type HttpRequest,
   type HttpResponse,
   type HttpSender,
+  isRestBinding,
+  multipartParts,
   type RawHttpResponse,
   type RestTransportOptions,
   restTransport,
@@ -32,6 +37,10 @@ export interface AngularRestOptions extends RestTransportOptions {
  *
  * With the default JSON codec, `HttpClient` serializes the body and parses the response itself, so Angular
  * interceptors see objects, as with a direct `HttpClient` call. With another codec, bodies are exchanged as text.
+ * Multipart bodies go to `HttpClient` as `FormData`, and `response: 'blob'` bindings are read as blobs.
+ *
+ * `onUploadProgress` and `onDownloadProgress` are reported from the `HttpClient` progress events (`reportProgress`).
+ * Only the `XMLHttpRequest` backend (`withXhr()`) emits upload progress events.
  */
 export function angularRest(
   http: HttpClient,
@@ -54,29 +63,35 @@ function httpClientSender(http: HttpClient, options: AngularRestOptions): HttpSe
         return;
       }
 
+      const blob = isRestBinding(call.operation.transport) && call.operation.transport.response === 'blob';
       const json = (call.operation.codec ?? options.codec ?? jsonCodec) === jsonCodec;
       const context = options.httpContext?.(call);
-      const init = {
-        headers: new HttpHeaders({ ...request.headers }),
-        observe: 'response' as const,
-        withCredentials: options.withCredentials ?? false,
-        ...(context === undefined ? {} : { context }),
-      };
-      const response$ = json
-        ? http.request<unknown>(request.method, request.url, {
-            ...init,
-            body: jsonBody(request),
-            responseType: 'json',
-          })
-        : http.request(request.method, request.url, { ...init, body: request.body ?? null, responseType: 'text' });
+      const progress = progressReporter(request, call);
+      const angularRequest = new AngularHttpRequest<unknown>(
+        request.method,
+        request.url,
+        json ? jsonBody(request) : (request.body ?? null),
+        {
+          headers: new HttpHeaders({ ...request.headers }),
+          reportProgress: progress !== undefined,
+          responseType: blob ? 'blob' : json ? 'json' : 'text',
+          withCredentials: options.withCredentials ?? false,
+          ...(context === undefined ? {} : { context }),
+        },
+      );
 
-      const subscription = response$.subscribe({
-        next: (response: AngularHttpResponse<unknown>) =>
-          resolve(raw(response.status, headersOf(response.headers), response.body)),
+      const subscription = http.request(angularRequest).subscribe({
+        next: (event: HttpEvent<unknown>) => {
+          progress?.(event);
+
+          if (event.type === HttpEventType.Response) {
+            resolve(raw(event.status, headersOf(event.headers), event.body, blob));
+          }
+        },
         error: (error: unknown) => {
           // Status 0: the request did not reach the server (network, CORS)
           if (error instanceof HttpErrorResponse && error.status !== 0) {
-            resolve(fromError(error));
+            resolve(fromError(error, blob));
           } else {
             reject(error);
           }
@@ -94,6 +109,49 @@ function httpClientSender(http: HttpClient, options: AngularRestOptions): HttpSe
     });
 }
 
+/**
+ * Turns the `HttpClient` progress events into the progress callbacks of the call, with the estimated progress of each
+ * file of a multipart body. `undefined` when the call has no progress callback.
+ */
+function progressReporter(request: HttpRequest, call: ActionCall): ((event: HttpEvent<unknown>) => void) | undefined {
+  const { onUploadProgress, onDownloadProgress } = call;
+
+  if (onUploadProgress === undefined && onDownloadProgress === undefined) {
+    return undefined;
+  }
+
+  const parts = request.body instanceof FormData ? multipartParts(request.body) : [];
+  let uploaded: { loaded: number; total: number | undefined } | undefined;
+  const upload = (loaded: number, total: number | undefined) => {
+    uploaded = { loaded, total };
+    onUploadProgress?.({ loaded, total, files: fileProgress(parts, loaded, total) });
+  };
+  // The answer starts once the body is sent: it completes every file, even when the last progress event came before it
+  const completeUpload = () => {
+    if (uploaded?.total !== undefined && uploaded.loaded < uploaded.total) {
+      upload(uploaded.total, uploaded.total);
+    }
+  };
+
+  return (event) => {
+    switch (event.type) {
+      case HttpEventType.UploadProgress:
+        upload(event.loaded, event.total);
+        break;
+      case HttpEventType.DownloadProgress:
+        completeUpload();
+        onDownloadProgress?.({ loaded: event.loaded, total: event.total });
+        break;
+      case HttpEventType.ResponseHeader:
+      case HttpEventType.Response:
+        completeUpload();
+        break;
+      default:
+        break;
+    }
+  };
+}
+
 /** A JSON body goes to `HttpClient` as a value, so Angular interceptors see what was sent, not its encoding. */
 function jsonBody(request: HttpRequest): unknown {
   if (request.body === undefined) {
@@ -105,23 +163,32 @@ function jsonBody(request: HttpRequest): unknown {
     : request.body;
 }
 
-function fromError(error: HttpErrorResponse): RawHttpResponse {
+function fromError(error: HttpErrorResponse, blob: boolean): RawHttpResponse {
   const headers = headersOf(error.headers);
   const payload: unknown = error.error;
+
+  // An error of a blob binding comes as a blob, read as text by the transport
+  if (blob) {
+    return raw(error.status, headers, payload, true);
+  }
 
   // A 2xx answer whose body is not JSON: HttpClient reports a parse failure and keeps the text
   if (error.status >= 200 && error.status < 300 && isParseFailure(payload)) {
     return { status: error.status, headers, text: payload.text };
   }
 
-  return raw(error.status, headers, payload);
+  return raw(error.status, headers, payload, false);
 }
 
 /**
  * Response for the REST transport. Text is left to the codec; a value parsed by `HttpClient` is passed as the decoded
- * body, unless the response declares another content type.
+ * body, unless the response declares another content type. A blob is passed as is, for the transport to decode.
  */
-function raw(status: number, headers: Record<string, string>, payload: unknown): RawHttpResponse {
+function raw(status: number, headers: Record<string, string>, payload: unknown, blob: boolean): RawHttpResponse {
+  if (blob) {
+    return payload instanceof Blob ? { status, headers, text: '', blob: payload } : { status, headers, text: '' };
+  }
+
   if (typeof payload === 'string') {
     return { status, headers, text: payload };
   }
