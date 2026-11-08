@@ -4,14 +4,14 @@ title: Architecture
 
 # Architecture
 
-```
- Description sources             Internal model            Outputs
- ┌────────────────────┐      ┌──────────────────┐      ┌─────────────────────────┐
- │ Contract in TS     │      │                  │      │ Typed client            │
- │ Decorators/markers │ ───▶ │ Normalized model │ ───▶ │ Generated contracts     │
- │ OpenAPI (import)   │      │ (operations,     │      │ (types + schemas)       │
- │ Introspection      │      │  schemas)        │      │                         │
- └────────────────────┘      └──────────────────┘      └─────────────────────────┘
+```text
+ Sources de description          Modèle interne                Sorties
+ ┌───────────────────────┐      ┌──────────────────┐      ┌───────────────────┐
+ │ Contrat en TS         │      │                  │      │ Client typé       │
+ │ Décorateurs/marqueurs │ ───▶│ Modèle normalisé │ ───▶│ Contrats générés  │
+ │ OpenAPI (import)      │      │ (opérations,     │      │ (types + schémas) │
+ │ Introspection         │      │  schémas)        │      │                   │
+ └───────────────────────┘      └──────────────────┘      └───────────────────┘
 ```
 
 ## Canaux

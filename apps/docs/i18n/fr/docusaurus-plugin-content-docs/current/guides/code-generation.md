@@ -8,6 +8,10 @@ Un contrat écrit en TypeScript ne demande aucune étape de build. Quand la desc
 OpenAPI, une application NestJS ou Express), Polycanal **génère** un contrat TypeScript lisible, avec des schémas
 d'exécution (Zod par défaut), que le front importe comme un contrat écrit à la main.
 
+Un contrat écrit à la main n'importe aucun code serveur : le back et le front importent donc le même fichier depuis un
+[package ou un répertoire partagé](../concepts/architecture.md#contrat-partagé), c'est-à-dire un package de workspace
+dans un monorepo, ou un package publié sur un registre npm (privé) quand ils vivent dans des repos séparés.
+
 ## Depuis OpenAPI
 
 ```bash

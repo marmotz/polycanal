@@ -8,6 +8,10 @@ A contract written in TypeScript needs no build step. When the description comes
 a NestJS or Express application), Polycanal **generates** a readable TypeScript contract with runtime schemas (Zod by
 default), which the front end imports like a handwritten one.
 
+A handwritten contract imports no server code, so the back end and the front end both import the same file from a
+[shared package or directory](../concepts/architecture.md#shared-contract): a workspace package in a monorepo, or a
+package published to a (private) npm registry when they live in separate repositories.
+
 ## From OpenAPI
 
 ```bash

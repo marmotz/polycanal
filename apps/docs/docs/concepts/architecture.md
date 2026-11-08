@@ -8,7 +8,7 @@ title: Architecture
  Description sources             Internal model            Outputs
  ┌────────────────────┐      ┌──────────────────┐      ┌─────────────────────────┐
  │ Contract in TS     │      │                  │      │ Typed client            │
- │ Decorators/markers │ ───▶ │ Normalized model │ ───▶ │ Generated contracts     │
+ │ Decorators/markers │ ───▶│ Normalized model │ ───▶│ Generated contracts     │
  │ OpenAPI (import)   │      │ (operations,     │      │ (types + schemas)       │
  │ Introspection      │      │  schemas)        │      │                         │
  └────────────────────┘      └──────────────────┘      └─────────────────────────┘
