@@ -17,6 +17,7 @@ Work in progress. See [the specification](docs/specs.md).
 | `@polycanal/zod`      | Zod validation driver (schema code generation)                                |
 | `@polycanal/codegen`  | Contract descriptions and TypeScript source generation                        |
 | `@polycanal/openapi`  | OpenAPI 3 import and `polycanal-openapi` CLI                                  |
+| `@polycanal/nest`     | NestJS route discovery, `@Endpoint()` decorators, contract generation         |
 
 ## Development
 

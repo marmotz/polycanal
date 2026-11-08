@@ -491,6 +491,24 @@ way to extract the schema from a pipe instance, or the project switches to a pip
 schemas exist only where a decorator such as `@ZodResponse` is used; elsewhere they must be attached (decorator or
 config).
 
+Implemented in `@polycanal/nest`:
+
+- `discoverNestContract(app, options)` walks the controllers of a created application (not listening): method, paths
+  (global prefix included), `@HttpCode`, and the route arguments. Pipe schemas are found by `schemaOf` (default: the
+  first Standard Schema property of the pipe, which matches `new ZodValidationPipe(schema)`). A whole `@Body()` or
+  `@Query()` object schema is spread into fields; a non-object body becomes a root `body` field. `@Param('x')`,
+  `@Query('x')` and `@Headers('x')` without pipe are described as strings (with a warning, except path parameters).
+  Path parameters not read by the handler are still described. A name used by two sources keeps it for the path and
+  is prefixed for the other (`bodyUserId`, aliased to `userId`).
+- Progressive adoption: by default only handlers decorated with `@Endpoint({ output, errors, input, name, namespace,
+  meta })` are described; `include: 'all'` describes every route that has a response schema. `outputOf` reads response
+  schemas from project decorators (e.g. `@ZodResponse`). `@EndpointNamespace()` overrides the default namespace (the
+  static segments of the controller path); the operation name defaults to the handler name.
+- The report lists undescribed routes, skipped routes with their reason (no response schema, wildcard path...),
+  warnings, and the conflicts with the `config` contract, which has the priority.
+- `generateNestContract(app, { output })` runs the discovery and writes the front-end contract (Zod by default), to be
+  called from a development script.
+
 ### Decision
 
 Two distinct roles for framework adapters:

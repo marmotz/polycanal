@@ -1,0 +1,52 @@
+{
+  "name": "@polycanal/nest",
+  "version": "0.0.0",
+  "description": "Polycanal NestJS adapter: route discovery, schema attachment decorators, contract generation",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marmotz/polycanal.git",
+    "directory": "packages/nest"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "@polycanal/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@polycanal/codegen": "workspace:*",
+    "@polycanal/core": "workspace:*",
+    "@polycanal/rest": "workspace:*",
+    "@polycanal/zod": "workspace:*"
+  },
+  "peerDependencies": {
+    "@nestjs/common": ">=11.0.0",
+    "@nestjs/core": ">=11.0.0",
+    "reflect-metadata": ">=0.2.0"
+  },
+  "devDependencies": {
+    "@nestjs/common": "12.1.3",
+    "@nestjs/core": "12.1.3",
+    "@nestjs/platform-express": "12.1.3",
+    "@nestjs/testing": "12.1.3",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "zod": "4.6.7"
+  }
+}
