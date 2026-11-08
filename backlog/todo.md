@@ -4,13 +4,13 @@
 
 ## Uploads de fichiers ·  [overview](features/uploads/overview.md)
 
-_tâches créées — voir [technical.md](features/uploads/technical.md)_ — 2/9 tasks done
+_tâches créées — voir [technical.md](features/uploads/technical.md)_ — 3/9 tasks done
 
 | Done | Issue                                               | Title                                                                         | Blocked by |
 |------|-----------------------------------------------------|-------------------------------------------------------------------------------|------------|
 | [x]  | [#1](https://github.com/marmotz/polycanal/issues/1) | core : options d'appel onUploadProgress / onDownloadProgress                  | —          |
 | [x]  | [#2](https://github.com/marmotz/polycanal/issues/2) | zod : générer z.file() depuis format: binary                                  | —          |
-| [ ]  | [#3](https://github.com/marmotz/polycanal/issues/3) | core : helpers serveur multerFileToFile et validateMultipartFields            | —          |
+| [x]  | [#3](https://github.com/marmotz/polycanal/issues/3) | core : helpers serveur multerFileToFile et validateMultipartFields            | —          |
 | [ ]  | [#4](https://github.com/marmotz/polycanal/issues/4) | rest : bindings multipart / blob, encodage FormData et estimation par fichier | #1         |
 | [ ]  | [#5](https://github.com/marmotz/polycanal/issues/5) | rest : fetchRest, progression d'envoi (XHR, flux compté) et de téléchargement | #1, #4     |
 | [ ]  | [#6](https://github.com/marmotz/polycanal/issues/6) | angular : FormData, réponses blob et progression dans angularRest             | #1, #4     |
