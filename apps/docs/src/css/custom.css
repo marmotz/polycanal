@@ -1,0 +1,26 @@
+/**
+ * Docusaurus theme tokens (Infima variables): a teal accent ramp, for "canals".
+ */
+
+:root {
+  --ifm-color-primary: #0f766e;
+  --ifm-color-primary-dark: #0d6b63;
+  --ifm-color-primary-darker: #0c645d;
+  --ifm-color-primary-darkest: #0a524c;
+  --ifm-color-primary-light: #118179;
+  --ifm-color-primary-lighter: #12887f;
+  --ifm-color-primary-lightest: #149a90;
+  --ifm-code-font-size: 92%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] {
+  --ifm-color-primary: #2dd4bf;
+  --ifm-color-primary-dark: #1fc9b4;
+  --ifm-color-primary-darker: #1ebeaa;
+  --ifm-color-primary-darkest: #199c8c;
+  --ifm-color-primary-light: #4cdac8;
+  --ifm-color-primary-lighter: #58ddcc;
+  --ifm-color-primary-lightest: #7fe5d8;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}

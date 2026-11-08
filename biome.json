@@ -7,7 +7,14 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!.idea"]
+    "includes": [
+      "**",
+      "!.idea",
+      "!apps/docs/build",
+      "!apps/docs/.docusaurus",
+      "!apps/docs/docs/api",
+      "!apps/docs/versioned_docs"
+    ]
   },
   "formatter": {
     "enabled": true,

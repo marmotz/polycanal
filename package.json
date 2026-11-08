@@ -4,18 +4,21 @@
   "type": "module",
   "packageManager": "bun@1.4.4",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "apps/*"
   ],
   "scripts": {
     "prepare": "lefthook install",
-    "build": "bun run --filter '*' build",
-    "typecheck": "bun run --filter '*' typecheck",
-    "test": "bun run --filter '*' test",
+    "build": "bun run --filter './packages/*' build",
+    "typecheck": "bun run --filter './packages/*' typecheck",
+    "test": "bun run --filter './packages/*' test",
     "lint": "biome ci .",
     "format": "biome check --write .",
     "changeset": "changeset",
     "version": "changeset version",
-    "release": "bun run build && changeset publish"
+    "release": "bun run build && changeset publish",
+    "build:docs": "bun run --filter '@polycanal/docs' build",
+    "docs": "bun run --filter '@polycanal/docs' start"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

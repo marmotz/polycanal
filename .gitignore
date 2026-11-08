@@ -8,3 +8,8 @@ coverage/
 !.env.example
 .idea/workspace.xml
 .test-output/
+
+# Docs site (apps/docs): generated and build output
+apps/docs/build
+apps/docs/.docusaurus
+apps/docs/docs/api

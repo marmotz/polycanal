@@ -1,0 +1,9 @@
+{
+  // Docusaurus ships its own base config: apps/docs is built by the Docusaurus CLI, not by the packages' tsconfig.
+  "extends": "@docusaurus/tsconfig",
+  "compilerOptions": {
+    // @docusaurus/tsconfig sets `baseUrl`, deprecated since TypeScript 6
+    "ignoreDeprecations": "6.0"
+  },
+  "exclude": [".docusaurus", "build"]
+}

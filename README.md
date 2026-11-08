@@ -4,7 +4,7 @@ A typed, transport-agnostic client in front of an existing back end (REST, Graph
 describes what the server exposes, without dictating how the server is written, and validates everything sent and
 received.
 
-Work in progress. See [the specification](docs/specs.md).
+Work in progress. See [the documentation](apps/docs) (`bun run docs`) and [the specification](docs/specs.md).
 
 ## Packages
 
@@ -28,6 +28,8 @@ bun run test
 bun run typecheck
 bun run lint
 bun run build
+bun run docs        # documentation site, http://localhost:3000/polycanal/
+bun run build:docs  # static site in apps/docs/build
 ```
 
 ## License
