@@ -1,0 +1,28 @@
+{
+  "name": "polycanal-monorepo",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.4.4",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "prepare": "lefthook install",
+    "build": "bun run --filter '*' build",
+    "typecheck": "bun run --filter '*' typecheck",
+    "test": "bun run --filter '*' test",
+    "lint": "biome ci .",
+    "format": "biome check --write .",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "bun run build && changeset publish"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@changesets/cli": "3.0.3",
+    "lefthook": "2.2.2",
+    "tsup": "8.5.1",
+    "typescript": "~6.0.2",
+    "vitest": "^5.0.5"
+  }
+}

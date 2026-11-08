@@ -1,0 +1,34 @@
+{
+  "name": "polycanal",
+  "version": "0.0.0",
+  "description": "Typed, transport-agnostic client in front of an existing back end (REST, GraphQL, WebSocket, SSE...)",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marmotz/polycanal.git",
+    "directory": "packages/polycanal"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "@polycanal/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@polycanal/core": "workspace:*"
+  }
+}

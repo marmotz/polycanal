@@ -1,0 +1,6 @@
+pre-commit:
+  commands:
+    biome:
+      # Lint and format staged files, then restage the fixes
+      run: bunx biome check --write --staged --no-errors-on-unmatched
+      stage_fixed: true

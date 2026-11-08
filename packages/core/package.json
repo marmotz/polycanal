@@ -1,0 +1,38 @@
+{
+  "name": "@polycanal/core",
+  "version": "0.0.0",
+  "description": "Polycanal core: transport-agnostic contract model (actions, events, inputs) built on Standard Schema",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marmotz/polycanal.git",
+    "directory": "packages/core"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "@polycanal/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@standard-schema/spec": "1.1.0"
+  },
+  "devDependencies": {
+    "zod": "4.6.7"
+  }
+}
