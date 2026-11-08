@@ -30,13 +30,17 @@ the opposite approach:
 - **Everything is validated.** Parameters are validated before sending, responses on receipt. Schemas come from any
   [Standard Schema](https://standardschema.dev/) library (Zod, Valibot, ArkType...).
 - **Progressive adoption.** Describe one endpoint, use it, and leave the others untouched.
-- **Framework agnostic.** The client returns Promises; an Angular integration keeps your `HttpClient` interceptors.
+- **Framework agnostic.** The client is plain TypeScript: it returns Promises and sends requests with `fetch`, so it
+  works as is with React, Vue, Svelte, Solid, Angular or vanilla JavaScript, in the browser as well as in Node or Bun.
+  Angular also gets an [optional integration](./guides/angular.md) that goes through `HttpClient`, to keep your
+  interceptors.
 
 ## How
 
 1. **Describe** the endpoints in a contract, written by hand with `defineContract()`, generated from an OpenAPI
    document, or discovered from a NestJS or Express application.
-2. **Create a client** from the contract with the transport driver of your choice (`fetch`, Angular `HttpClient`).
+2. **Create a client** from the contract with a transport driver: `fetch` everywhere, or any HTTP client
+   you plug in (Angular's `HttpClient` is provided).
 3. **Call** `server.namespace.operation(input)`: typed, validated, and returning the validated response.
 
 Continue with the [installation](./getting-started/installation.md) and

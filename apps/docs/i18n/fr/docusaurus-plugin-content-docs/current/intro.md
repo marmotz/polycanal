@@ -31,15 +31,17 @@ Polycanal prend le chemin inverse :
 - **Tout est validé.** Les paramètres sont validés avant l'envoi, les réponses à la réception. Les schémas viennent de
   n'importe quelle bibliothèque compatible [Standard Schema](https://standardschema.dev/) (Zod, Valibot, ArkType...).
 - **Adoption progressive.** Décrivez un endpoint, utilisez-le, et laissez les autres tels quels.
-- **Indépendant du framework.** Le client renvoie des Promises ; une intégration Angular conserve vos intercepteurs
-  `HttpClient`.
+- **Indépendant du framework.** Le client est du TypeScript standard : il renvoie des Promises et envoie ses
+  requêtes avec `fetch`. Il fonctionne donc tel quel avec React, Vue, Svelte, Solid, Angular ou du JavaScript sans
+  framework (vanilla), dans le navigateur comme dans Node ou Bun. Angular dispose en plus d'une
+  [intégration optionnelle](./guides/angular.md) qui passe par `HttpClient`, pour conserver vos intercepteurs.
 
 ## Comment
 
 1. **Décrivez** les endpoints dans un contrat, écrit à la main avec `defineContract()`, généré depuis un document
    OpenAPI, ou découvert depuis une application NestJS ou Express.
-2. **Créez un client** à partir du contrat, avec le driver de transport de votre choix (`fetch`, `HttpClient`
-   d'Angular).
+2. **Créez un client** à partir du contrat, avec un driver de transport : `fetch` partout, ou n'importe quel
+   client HTTP que vous branchez (celui pour le `HttpClient` d'Angular est fourni).
 3. **Appelez** `server.namespace.operation(input)` : typé, validé, et renvoyant la réponse validée.
 
 Poursuivez avec l'[installation](./getting-started/installation.md) et le
