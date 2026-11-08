@@ -44,11 +44,46 @@ A call:
 
 Call options:
 
-| Option         | Role                                                                     |
-|----------------|--------------------------------------------------------------------------|
-| `signal`       | `AbortSignal` cancelling the request                                     |
-| `context`      | Free data visible to interceptors and drivers                            |
-| `interceptors` | Interceptors of this call only, typed with the driver's native request   |
+| Option               | Role                                                                     |
+|----------------------|--------------------------------------------------------------------------|
+| `signal`             | `AbortSignal` cancelling the request                                     |
+| `context`            | Free data visible to interceptors and drivers                            |
+| `interceptors`       | Interceptors of this call only, typed with the driver's native request   |
+| `onUploadProgress`   | Called as the request body is sent, see [progress](#progress)            |
+| `onDownloadProgress` | Called as the response body is received, see [progress](#progress)       |
+
+## Progress
+
+```ts
+const controller = new AbortController();
+
+await server.listings.addPhoto(
+  { id: 'l1', photo },
+  {
+    signal: controller.signal, // controller.abort() cancels the upload
+    onUploadProgress: ({ loaded, total, files }) => render(loaded, total, files),
+    onDownloadProgress: ({ loaded, total }) => render(loaded, total),
+  },
+);
+```
+
+- `onUploadProgress` receives the bytes sent for the whole request (`total` is `undefined` when unknown) and, for a
+  [multipart body](./rest.md#file-uploads), the estimated progress of each file in body order (`field`, `name`,
+  `loaded`, `total`). At the end of the upload, every file is complete.
+- `onDownloadProgress` receives the bytes received; `total` comes from `Content-Length` and is `undefined` when it is
+  absent or the response is compressed.
+- An interceptor that replays the request reports the progress again from zero.
+- A driver that cannot measure ignores these options.
+
+With `fetchRest()`:
+
+- In browsers, a call with `onUploadProgress` is sent with `XMLHttpRequest`, the only API reporting the bytes sent. The
+  `fetch` option does not apply to it, and only `credentials: 'include'` is honored (`withCredentials`).
+- Without `XMLHttpRequest` (Node, Bun, or `fetchRest({ XMLHttpRequest: null })`), the body is serialized once (exact
+  `total`) and streamed to `fetch` through a byte counter. It measures what `fetch` has read, slightly ahead of what
+  the network sent: the progress is approximate but real.
+- `onDownloadProgress` reads the response body chunk by chunk, with `fetch` or `XMLHttpRequest`.
+- `signal` cancels the request in every case; the call rejects with the abort reason as cause.
 
 ## Events
 

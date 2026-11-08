@@ -45,11 +45,47 @@ Un appel :
 
 Options d'appel :
 
-| Option         | Rôle                                                                            |
-|----------------|---------------------------------------------------------------------------------|
-| `signal`       | `AbortSignal` qui annule la requête                                             |
-| `context`      | Données libres visibles des intercepteurs et des drivers                        |
-| `interceptors` | Intercepteurs de cet appel seulement, typés avec la requête native du driver    |
+| Option               | Rôle                                                                            |
+|----------------------|---------------------------------------------------------------------------------|
+| `signal`             | `AbortSignal` qui annule la requête                                             |
+| `context`            | Données libres visibles des intercepteurs et des drivers                        |
+| `interceptors`       | Intercepteurs de cet appel seulement, typés avec la requête native du driver    |
+| `onUploadProgress`   | Appelé pendant l'envoi du corps de la requête, voir [progression](#progression) |
+| `onDownloadProgress` | Appelé pendant la réception de la réponse, voir [progression](#progression)     |
+
+## Progression
+
+```ts
+const controller = new AbortController();
+
+await server.listings.addPhoto(
+  { id: 'l1', photo },
+  {
+    signal: controller.signal, // controller.abort() cancels the upload
+    onUploadProgress: ({ loaded, total, files }) => render(loaded, total, files),
+    onDownloadProgress: ({ loaded, total }) => render(loaded, total),
+  },
+);
+```
+
+- `onUploadProgress` reçoit les octets envoyés pour toute la requête (`total` vaut `undefined` quand il est inconnu)
+  et, pour un [corps multipart](./rest.md#envoi-de-fichiers), la progression estimée de chaque fichier dans l'ordre
+  du corps (`field`, `name`, `loaded`, `total`). À la fin de l'envoi, chaque fichier est complet.
+- `onDownloadProgress` reçoit les octets reçus ; `total` vient de `Content-Length` et vaut `undefined` quand il est
+  absent ou que la réponse est compressée.
+- Un intercepteur qui rejoue la requête refait remonter la progression depuis zéro.
+- Un driver qui ne sait pas mesurer ignore ces options.
+
+Avec `fetchRest()` :
+
+- Dans un navigateur, un appel avec `onUploadProgress` part avec `XMLHttpRequest`, seule API qui remonte les octets
+  envoyés. L'option `fetch` ne s'y applique pas, et seul `credentials: 'include'` est pris en compte
+  (`withCredentials`).
+- Sans `XMLHttpRequest` (Node, Bun, ou `fetchRest({ XMLHttpRequest: null })`), le corps est sérialisé une fois
+  (`total` exact) puis envoyé en flux à `fetch` à travers un compteur d'octets. Il mesure ce que `fetch` a lu, un peu
+  en avance sur ce que le réseau a envoyé : la progression est approximative mais réelle.
+- `onDownloadProgress` lit le corps de la réponse morceau par morceau, avec `fetch` ou `XMLHttpRequest`.
+- `signal` annule la requête dans tous les cas ; l'appel est rejeté avec la raison de l'annulation comme cause.
 
 ## Événements
 

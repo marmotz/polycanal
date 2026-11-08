@@ -103,6 +103,7 @@ fetchRest({
   headers: () => ({ 'X-Tenant': currentTenant() }), // static object or function called for each request
   credentials: 'include', // cookies to another origin
   fetch: customFetch, // default: global fetch
+  XMLHttpRequest: null, // used for upload progress, default: global XMLHttpRequest (see the client guide)
   interceptors: [auth], // see Interceptors
   codec: jsonCodec, // default codec of the driver
 });
