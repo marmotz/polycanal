@@ -482,6 +482,24 @@ non-exported `Symbol` keys (`route`, `router`...). The adapter will have to eith
 (brittle), rely on approach 1, or require one of the library's decorators in addition. Since `@Body()` payloads have no
 runtime schema, schemas must be attached to them (decorator or config).
 
+Implemented in `@polycanal/express` (decided: approach 1 plus a marker of the library, no reflection on reflet's private
+metadata):
+
+- `endpoint({ input, output, errors, name, namespace, status, meta })` is a no-op middleware that marks a route and
+  carries its schemas: `app.post('/login', endpoint({...}), handler)` in plain Express, `@Use(endpoint({...}))` with
+  `@reflet/express` (its wrappers keep the original middleware in a symbol property, which the adapter follows). Only
+  marked routes are described (progressive adoption); the others are reported as undescribed.
+- `listRoutes(app)` walks the router stack. Express 4: `app._router.stack` (never `app.router`, which throws), mount
+  paths rebuilt from the layers' regular expressions. Express 5: `app.router.stack`, where mount paths are not kept:
+  `recordMountPaths(express)` must be called before routers are mounted (it also works for Express 4). Pattern routes
+  and sub-applications mounted with `app.use(otherApp)` cannot be described (their routes are hidden behind a closure).
+- `input` is a field map like `input()`, or an object schema; path parameters it does not describe are added as
+  strings. The default name is built from the method and the path (`getHouseholdsById`); `name` and `namespace` set it.
+- `discoverExpressContract(app, { config })` and `generateExpressContract(app, { output })` work like the Nest ones.
+- Deviation from the starting plan: Express does not reuse the Nest decorators. Plain Express handlers are functions,
+  and decorator libraries do not link their class methods to the mounted routes, so a middleware marker is the only
+  mechanism that works for both.
+
 ### NestJS
 
 For the NestJS + Angular target (§1): routes come from `DiscoveryService`. Request schemas are already present at
@@ -590,12 +608,10 @@ channel and operation, HTTP status when relevant, validation issues, raw respons
 
 ## 13. Open questions
 
-- `@reflet/express` adapter: reflection on private metadata, walking the Express stack, or the library's decorators in
-  addition?
 - Socket.io: its protocol (Engine.io) is not raw WebSocket. Dedicated driver or an option of the WS driver?
-- `@reflet/express` adapter: reflection on private metadata, walking the Express stack, or the library's decorators in
-  addition?
-- Socket.io: its protocol (Engine.io) is not raw WebSocket. Dedicated driver or an option of the WS driver?
+
+Resolved: the `@reflet/express` adapter walks the Express stack and relies on the library's `endpoint()` marker
+attached with `@Use()`, without reading reflet's private metadata (§7).
 
 ## Sources (verified on 2026-11-08)
 

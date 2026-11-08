@@ -1,0 +1,50 @@
+{
+  "name": "@polycanal/express",
+  "version": "0.0.0",
+  "description": "Polycanal Express adapter: route discovery (Express 4 and 5), endpoint markers, contract generation",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marmotz/polycanal.git",
+    "directory": "packages/express"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "@polycanal/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@polycanal/codegen": "workspace:*",
+    "@polycanal/core": "workspace:*",
+    "@polycanal/rest": "workspace:*",
+    "@polycanal/zod": "workspace:*"
+  },
+  "peerDependencies": {
+    "express": ">=4.17.0"
+  },
+  "devDependencies": {
+    "express": "4.22.3",
+    "express5": "npm:express@5.3.0",
+    "@reflet/express": "2.1.0",
+    "@types/express": "^4.17.21",
+    "reflect-metadata": "0.2.2",
+    "zod": "4.6.7",
+    "@reflet/http": "1.0.1"
+  }
+}
