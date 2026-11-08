@@ -28,8 +28,9 @@ bun run test
 bun run typecheck
 bun run lint
 bun run build
-bun run docs        # documentation site, http://localhost:3000/polycanal/
-bun run build:docs  # static site in apps/docs/build
+bun run docs        # documentation site in English, http://localhost:3000/polycanal/
+bun run docs:fr     # in French (the dev server serves one locale at a time)
+bun run build:docs  # static site with every locale, in apps/docs/build
 ```
 
 ## License

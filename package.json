@@ -18,7 +18,8 @@
     "version": "changeset version",
     "release": "bun run build && changeset publish",
     "build:docs": "bun run --filter '@polycanal/docs' build",
-    "docs": "bun run --filter '@polycanal/docs' start"
+    "docs": "bun run --filter '@polycanal/docs' start",
+    "docs:fr": "bun run --filter '@polycanal/docs' start:fr"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

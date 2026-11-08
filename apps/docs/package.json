@@ -8,7 +8,8 @@
     "clear": "docusaurus clear",
     "version": "docusaurus docs:version",
     "typecheck": "tsc --noEmit",
-    "docusaurus": "docusaurus"
+    "docusaurus": "docusaurus",
+    "start:fr": "docusaurus start --locale fr --no-open"
   },
   "devDependencies": {
     "@docusaurus/core": "3.10.2",

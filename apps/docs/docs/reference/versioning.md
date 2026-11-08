@@ -6,6 +6,10 @@ title: Documentation versions
 
 This site is versioned with Docusaurus, in English and French.
 
+The development server serves one locale at a time: `bun run docs` for English, `bun run docs:fr` for French. The
+locale dropdown only switches between locales on a built site (`bun run build:docs`, then
+`bun run --filter @polycanal/docs serve`).
+
 - **next** documents the `develop` branch. It is the only version until the first release.
 - Each release freezes a copy of the documentation, API reference included, under its version number.
 
