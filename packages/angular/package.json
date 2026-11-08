@@ -1,0 +1,50 @@
+{
+  "name": "@polycanal/angular",
+  "version": "0.0.0",
+  "description": "Polycanal Angular integration: HttpClient-based REST driver and resources",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marmotz/polycanal.git",
+    "directory": "packages/angular"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "@polycanal/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@polycanal/core": "workspace:*",
+    "@polycanal/rest": "workspace:*"
+  },
+  "peerDependencies": {
+    "@angular/common": ">=21.0.0",
+    "@angular/core": ">=21.0.0",
+    "rxjs": "^7.4.0"
+  },
+  "devDependencies": {
+    "@angular/common": "22.2.3",
+    "@angular/core": "22.2.3",
+    "@angular/compiler": "22.2.3",
+    "@angular/platform-browser": "22.2.3",
+    "jsdom": "^27.0.0",
+    "rxjs": "7.8.2",
+    "zod": "4.6.7"
+  }
+}

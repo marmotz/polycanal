@@ -1,4 +1,5 @@
 import type { StandardJSONSchemaV1 } from '@standard-schema/spec';
+import type { TransportBinding } from './binding.js';
 import type { StandardSchemaV1 } from './schema.js';
 
 /** A JSON Schema document (draft 2020-12). */
@@ -38,6 +39,8 @@ export interface ValidationDriver {
   readonly name: string;
   /** Generates the source code of a schema from a JSON Schema. */
   generate(schema: JsonSchema, context: SchemaGenerationContext): GeneratedCode;
+  /** Wraps generated code so that the value may be omitted (an optional `input()` field). */
+  optional(schema: GeneratedCode): GeneratedCode;
   /** Converts a schema of this library to JSON Schema. Default: Standard JSON Schema. */
   toJsonSchema?(schema: StandardSchemaV1, io: 'input' | 'output'): JsonSchema | undefined;
 }
@@ -71,4 +74,11 @@ function acceptsOnlyUndefined(schema: StandardSchemaV1): boolean {
   };
 
   return accepts(undefined) && !accepts(null) && !accepts('') && !accepts(0) && !accepts({});
+}
+
+/** Generates the source code that rebuilds a binding (e.g. `rest.post('/auth/login')`), provided by driver packages. */
+export interface BindingEmitter {
+  /** Matches `TransportBinding.driver`. */
+  readonly driver: string;
+  emit(binding: TransportBinding): GeneratedCode;
 }

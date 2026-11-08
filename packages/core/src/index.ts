@@ -7,6 +7,19 @@ export type {
   SourceOf,
   TransportBinding,
 } from './binding.js';
+export {
+  type ActionMethod,
+  type AnyInterceptor,
+  type CallOptions,
+  type Client,
+  type ClientOptions,
+  createClient,
+  type EventHandle,
+  type OperationOptions,
+  type RequestOf,
+  type ResponseOf,
+  type SubscribeOptions,
+} from './client.js';
 export { jsonCodec, matchesContentType } from './codec.js';
 export {
   type ActionModel,
@@ -64,6 +77,7 @@ export type {
   TransportDriver,
 } from './transport.js';
 export {
+  type BindingEmitter,
   type CodeImport,
   type GeneratedCode,
   type JsonSchema,

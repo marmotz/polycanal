@@ -15,6 +15,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
-    "customConditions": ["@polycanal/source"]
+    "customConditions": ["@polycanal/source"],
+    "types": ["node"]
   }
 }

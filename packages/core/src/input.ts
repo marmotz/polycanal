@@ -208,11 +208,14 @@ function validateFields(
   fields: readonly NormalizedField[],
   value: unknown,
 ): StandardSchemaV1.Result<Record<string, unknown>> | Promise<StandardSchemaV1.Result<Record<string, unknown>>> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+  // No argument at all is an empty object: an input with optional fields only can be omitted
+  const candidate = value === undefined ? {} : value;
+
+  if (typeof candidate !== 'object' || candidate === null || Array.isArray(candidate)) {
     return { issues: [{ message: 'Expected an object' }] };
   }
 
-  const record = value as Record<string, unknown>;
+  const record = candidate as Record<string, unknown>;
   const results = fields.map((field) => field.schema['~standard'].validate(record[field.name]));
 
   if (results.some((result) => result instanceof Promise)) {

@@ -1,9 +1,12 @@
 import type { ActionBinding, EventBinding } from '../binding.js';
+import type { MemoryRequest, MemoryResponse } from './memory-driver.js';
 
-/** REST-like binding, standing in for `@polycanal/rest` in core tests. */
+/** REST-like binding, standing in for `@polycanal/rest` in core tests. Carried by the memory driver. */
 export interface TestRestBinding extends ActionBinding<'path' | 'query' | 'body' | 'header'> {
   readonly method: string;
   readonly path: string;
+  readonly '~request'?: MemoryRequest;
+  readonly '~response'?: MemoryResponse;
 }
 
 export function restLike(method: string, path: string): TestRestBinding {

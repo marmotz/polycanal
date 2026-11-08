@@ -83,7 +83,7 @@ function collect(tree: ContractTree, prefix: readonly string[], operations: Oper
   }
 }
 
-function actionModel(definition: ActionDefinition, path: readonly string[]): ActionModel {
+export function actionModel(definition: ActionDefinition, path: readonly string[]): ActionModel {
   const { input } = definition;
 
   return {
@@ -100,7 +100,7 @@ function actionModel(definition: ActionDefinition, path: readonly string[]): Act
   };
 }
 
-function eventModel(definition: EventDefinition, path: readonly string[]): EventModel {
+export function eventModel(definition: EventDefinition, path: readonly string[]): EventModel {
   return {
     family: 'event',
     id: path.join('.'),

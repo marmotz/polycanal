@@ -1,0 +1,38 @@
+{
+  "name": "@polycanal/rest",
+  "version": "0.0.0",
+  "description": "Polycanal REST driver: bindings, request mapping, fetch transport",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marmotz/polycanal.git",
+    "directory": "packages/rest"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "@polycanal/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@polycanal/core": "workspace:*"
+  },
+  "devDependencies": {
+    "zod": "4.6.7"
+  }
+}

@@ -59,6 +59,11 @@ describe('input()', () => {
     }
   });
 
+  it('treats a missing argument as an empty object', async () => {
+    expect(await validate(input({ page: z.number().default(1) }), undefined)).toEqual({ value: { page: 1 } });
+    expect((await validate(input({ id: z.string() }), undefined)).issues?.[0]?.path).toEqual(['id']);
+  });
+
   it('validates synchronously when every field schema is synchronous', () => {
     const definition = input({ id: z.string() });
 

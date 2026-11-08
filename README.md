@@ -8,10 +8,15 @@ Work in progress. See [the specification](docs/specs.md).
 
 ## Packages
 
-| Package           | Role                                                                 |
-|-------------------|----------------------------------------------------------------------|
-| `polycanal`       | Entry point, re-exports the core                                     |
-| `@polycanal/core` | Contract model: `defineContract`, `action`, `event`, `input`, `toModel` |
+| Package               | Role                                                                          |
+|-----------------------|-------------------------------------------------------------------------------|
+| `polycanal`           | Entry point, re-exports the core                                              |
+| `@polycanal/core`     | Contract model, typed client, interceptors, driver interfaces, errors         |
+| `@polycanal/rest`     | REST bindings (`rest.get()`...), request mapping, `fetchRest()` driver        |
+| `@polycanal/angular`  | `HttpClient`-based REST driver, `actionResource()`                            |
+| `@polycanal/zod`      | Zod validation driver (schema code generation)                                |
+| `@polycanal/codegen`  | Contract descriptions and TypeScript source generation                        |
+| `@polycanal/openapi`  | OpenAPI 3 import and `polycanal-openapi` CLI                                  |
 
 ## Development
 
