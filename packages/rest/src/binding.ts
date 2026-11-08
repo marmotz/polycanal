@@ -16,6 +16,10 @@ export type PathParams<TPath extends string> = TPath extends `${infer THead}/${i
 export interface RestBindingOptions {
   /** Status codes meaning success. Default: any 2xx status. */
   readonly status?: number | readonly number[];
+  /** Encoding of the request body: `'multipart'` sends the body fields as `multipart/form-data`. Default: the codec. */
+  readonly body?: 'multipart';
+  /** Kind of success response body: `'blob'` delivers a `File`. Default: the codec. */
+  readonly response?: 'blob';
 }
 
 /** Binding produced by `rest.get()`, `rest.post()`... */
@@ -26,6 +30,10 @@ export interface RestBinding<TMethod extends HttpMethod = HttpMethod, TPath exte
   readonly path: TPath;
   /** Success status codes, `undefined` for any 2xx status. */
   readonly status: readonly number[] | undefined;
+  /** Encoding of the request body, `undefined` for the codec. */
+  readonly body: 'multipart' | undefined;
+  /** Kind of success response body, `undefined` for the codec. */
+  readonly response: 'blob' | undefined;
   readonly requires: { readonly [K in PathParams<TPath>]: 'path' };
   readonly '~request'?: HttpRequest;
   readonly '~response'?: HttpResponse;
@@ -58,6 +66,18 @@ function binding<const TMethod extends HttpMethod>(method: TMethod) {
       throw new TypeError(`rest: path "${path}" must start with "/"`);
     }
 
+    if (options.body !== undefined && options.body !== 'multipart') {
+      throw new TypeError(`rest: unknown body encoding "${String(options.body)}" for "${path}"`);
+    }
+
+    if (options.body === 'multipart' && QUERY_METHODS.has(method)) {
+      throw new TypeError(`rest: ${method} "${path}" cannot send a multipart body`);
+    }
+
+    if (options.response !== undefined && options.response !== 'blob') {
+      throw new TypeError(`rest: unknown response kind "${String(options.response)}" for "${path}"`);
+    }
+
     const requires = Object.fromEntries(pathParams(path).map((name) => [name, 'path'])) as RestBinding<
       TMethod,
       TPath
@@ -69,7 +89,17 @@ function binding<const TMethod extends HttpMethod>(method: TMethod) {
           ? [options.status]
           : [...options.status];
 
-    return { driver: 'rest', family: 'action', sources: REST_SOURCES, method, path, status, requires };
+    return {
+      driver: 'rest',
+      family: 'action',
+      sources: REST_SOURCES,
+      method,
+      path,
+      status,
+      body: options.body,
+      response: options.response,
+      requires,
+    };
   };
 }
 

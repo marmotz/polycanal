@@ -12,6 +12,8 @@ describe('rest bindings', () => {
       method: 'PATCH',
       path: '/households/:householdId/members/:userId',
       status: undefined,
+      body: undefined,
+      response: undefined,
       requires: { householdId: 'path', userId: 'path' },
     });
     expect(isRestBinding(binding)).toBe(true);
@@ -31,6 +33,21 @@ describe('rest bindings', () => {
   it('normalizes the success status option', () => {
     expect(rest.post('/x', { status: 201 }).status).toEqual([201]);
     expect(rest.post('/x', { status: [200, 204] }).status).toEqual([200, 204]);
+  });
+
+  it('keeps the body and response options as plain data', () => {
+    const binding = rest.post('/photos', { body: 'multipart', response: 'blob' });
+
+    expect(binding.body).toBe('multipart');
+    expect(binding.response).toBe('blob');
+    expect(rest.get('/photos/:id', { response: 'blob' }).response).toBe('blob');
+  });
+
+  it('rejects a multipart body on GET and DELETE, and unknown options', () => {
+    expect(() => rest.get('/x', { body: 'multipart' })).toThrow('rest: GET "/x" cannot send a multipart body');
+    expect(() => rest.delete('/x', { body: 'multipart' })).toThrow('rest: DELETE "/x" cannot send a multipart body');
+    expect(() => rest.post('/x', { body: 'xml' as 'multipart' })).toThrow('unknown body encoding "xml"');
+    expect(() => rest.get('/x', { response: 'stream' as 'blob' })).toThrow('unknown response kind "stream"');
   });
 
   it('rejects paths without leading slash and invalid parameters', () => {
