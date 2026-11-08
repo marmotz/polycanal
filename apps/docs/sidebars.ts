@@ -50,6 +50,7 @@ const sidebars: SidebarsConfig = {
         'guides/errors',
         'guides/angular',
         'guides/code-generation',
+        'guides/cli',
         'guides/nestjs',
         'guides/express',
       ],

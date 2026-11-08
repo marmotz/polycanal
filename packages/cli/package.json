@@ -1,0 +1,45 @@
+{
+  "name": "@polycanal/cli",
+  "version": "0.0.0",
+  "description": "Polycanal command line: generates front-end contracts from a configuration (polycanal.config.ts)",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marmotz/polycanal.git",
+    "directory": "packages/cli"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "@polycanal/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@polycanal/codegen": "workspace:*",
+    "@polycanal/core": "workspace:*",
+    "@polycanal/rest": "workspace:*",
+    "@polycanal/zod": "workspace:*"
+  },
+  "bin": {
+    "polycanal": "./bin/polycanal.js"
+  },
+  "devDependencies": {
+    "zod": "4.6.7"
+  }
+}

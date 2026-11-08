@@ -6,6 +6,7 @@ import {
   type InputDescription,
   type OperationDescription,
   SCHEMA_REF_PREFIX,
+  schemaImportOf,
 } from './description.js';
 
 interface Hoisted {
@@ -33,7 +34,8 @@ export function hoistDefinitions(description: ContractDescription): Hoisted {
   };
 
   const hoist = (schema: JsonSchema, owner: string): JsonSchema => {
-    if (typeof schema !== 'object') {
+    // An imported schema is not generated: its definitions stay with it
+    if (typeof schema !== 'object' || schemaImportOf(schema) !== undefined) {
       return schema;
     }
 

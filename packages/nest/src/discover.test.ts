@@ -2,7 +2,9 @@ import 'reflect-metadata';
 import { mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { INestApplication } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { IMPORT_KEYWORD, schemaImportOf } from '@polycanal/codegen';
 import { action, type ContractTree, createClient, defineContract } from '@polycanal/core';
 import { fetchRest, rest } from '@polycanal/rest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -10,9 +12,14 @@ import { z } from 'zod';
 import {
   AuthController,
   HouseholdsController,
+  LoginRequestSchema,
+  LoginResponseSchema,
   ProjectsController,
+  RoleBodySchema,
   ZOD_RESPONSE_SCHEMA_KEY,
+  ZodValidationPipe,
 } from './__fixtures__/app.js';
+import { Endpoint } from './decorators.js';
 import { discoverNestContract, type NestDiscoveryOptions } from './discover.js';
 import { generateNestContract } from './generate.js';
 
@@ -171,6 +178,118 @@ describe('discoverNestContract()', () => {
     expect(discovery.report.conflicts).toEqual([
       { operation: 'auth.login', reason: 'config declares POST /api/v2/auth/login, discovered POST /api/auth/login' },
     ]);
+  });
+
+  it('reads the controllers from the container of the application, not through @nestjs/core tokens', () => {
+    // What another copy of Nest would hand over: an application whose classes are not this package's
+    const container = (app as unknown as { container: { getModules(): unknown } }).container;
+    const foreignApp = { container: { getModules: () => container.getModules() }, get: () => undefined };
+
+    const discovery = discoverNestContract(foreignApp as unknown as INestApplication, { globalPrefix: 'api' });
+
+    expect(discovery.description.operations.map((candidate) => candidate.path.join('.'))).toEqual(
+      discoverNestContract(app).description.operations.map((candidate) => candidate.path.join('.')),
+    );
+  });
+
+  it('lets a root override replace the body fields it discovered', async () => {
+    const BodySchema = z.object({ name: z.string(), tags: z.array(z.string()) });
+
+    @Controller('notes')
+    class NotesController {
+      @Post()
+      @Endpoint({ output: z.void(), input: { body: { source: 'body', root: true, schema: BodySchema } } })
+      create(@Body(new ZodValidationPipe(BodySchema)) body: unknown) {
+        return body;
+      }
+    }
+
+    const moduleRef = await Test.createTestingModule({ controllers: [NotesController] }).compile();
+    const notes = moduleRef.createNestApplication({ logger: false });
+    await notes.init();
+
+    const create = operation(discoverNestContract(notes), 'notes.create');
+    await notes.close();
+
+    expect(
+      create.input?.kind === 'fields' && create.input.fields.map(({ name, source, root }) => ({ name, source, root })),
+    ).toEqual([{ name: 'body', source: 'body', root: true }]);
+  });
+
+  it('imports the schemas resolveSchema finds, keeping a found body whole', () => {
+    const shared = new Map<unknown, string>([
+      [LoginRequestSchema, 'LoginRequestSchema'],
+      [LoginResponseSchema, 'LoginResponseSchema'],
+      [RoleBodySchema, 'RoleBodySchema'],
+    ]);
+    const discovery = discoverNestContract(app, {
+      resolveSchema: (schema) => {
+        const name = shared.get(schema);
+        return name === undefined ? undefined : { from: '@app/shared', name };
+      },
+    });
+
+    const login = operation(discovery, 'auth.login');
+    expect(login.input).toEqual({
+      kind: 'fields',
+      fields: [
+        expect.objectContaining({
+          name: 'body',
+          source: 'body',
+          root: true,
+          required: true,
+          schema: expect.objectContaining({ [IMPORT_KEYWORD]: { from: '@app/shared', name: 'LoginRequestSchema' } }),
+        }),
+      ],
+    });
+    expect(schemaImportOf(login.output)).toEqual({ from: '@app/shared', name: 'LoginResponseSchema' });
+
+    const role = operation(discovery, 'households.updateMemberRole');
+    expect(role.input?.kind === 'fields' && role.input.fields.map(({ name, root }) => [name, root ?? false])).toEqual([
+      ['householdId', false],
+      ['userId', false],
+      ['body', true],
+    ]);
+
+    expect(discovery.report.regenerated).toEqual([
+      'POST /api/auth/login error 401',
+      'GET /api/households output',
+      'PATCH /api/households/:householdId/members/:userId output',
+      'DELETE /api/households/:id output',
+      'POST /api/households/import body',
+      'POST /api/households/import output',
+    ]);
+  });
+
+  it('does not report a schema an override replaced', async () => {
+    const NoteSchema = z.object({ name: z.string() });
+
+    @Controller('notes')
+    class NotesController {
+      @Post()
+      @Endpoint({ output: NoteSchema, input: { body: { source: 'body', root: true, schema: NoteSchema } } })
+      create(@Body(new ZodValidationPipe(z.preprocess((body) => body ?? {}, NoteSchema))) body: unknown) {
+        return body;
+      }
+    }
+
+    const moduleRef = await Test.createTestingModule({ controllers: [NotesController] }).compile();
+    const notes = moduleRef.createNestApplication({ logger: false });
+    await notes.init();
+    const discovery = discoverNestContract(notes, {
+      resolveSchema: (schema) => (schema === NoteSchema ? { from: '@app/shared', name: 'NoteSchema' } : undefined),
+    });
+    await notes.close();
+
+    expect(discovery.report.regenerated).toEqual([]);
+  });
+
+  it('lists nothing as regenerated without resolveSchema', () => {
+    expect(discoverNestContract(app).report.regenerated).toEqual([]);
+  });
+
+  it('refuses an object that is not a Nest application', () => {
+    expect(() => discoverNestContract({} as INestApplication)).toThrow(/expected a Nest application/);
   });
 
   it('accepts an explicit global prefix and a custom pipe reader', () => {

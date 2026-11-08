@@ -13,7 +13,8 @@ title: Packages
 | `@polycanal/zod`     | `zodDriver`, Zod 4 code generation from JSON Schema                                      |
 | `@polycanal/codegen` | Contract descriptions, `describeContract()`, `mergeDescriptions()`, `generateContractSource()` |
 | `@polycanal/openapi` | `importOpenApi()`, `generateFromOpenApi()`, the `polycanal-openapi` CLI                  |
-| `@polycanal/nest`    | `@Endpoint()`, `@EndpointNamespace()`, `discoverNestContract()`, `generateNestContract()` |
+| `@polycanal/nest`    | `@Endpoint()`, `@EndpointNamespace()`, `nestSource()`, `discoverNestContract()`, `generateNestContract()` |
+| `@polycanal/cli`     | The `polycanal generate` command, `defineConfig()`, `generate()`                          |
 | `@polycanal/express` | `endpoint()`, `listRoutes()`, `recordMountPaths()`, `discoverExpressContract()`, `generateExpressContract()` |
 
 Planned: `@polycanal/ws` (WebSocket and socket.io events, AsyncAPI import), `@polycanal/graphql`.

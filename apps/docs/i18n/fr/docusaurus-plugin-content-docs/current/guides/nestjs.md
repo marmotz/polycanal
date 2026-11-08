@@ -34,28 +34,25 @@ export class LoginController {
 |-------------------------|----------------------------------------------------------------------------------------|
 | `output`                | Schéma de la réponse. Obligatoire, sauf si `outputOf` en trouve un                     |
 | `errors`                | Schémas des corps d'erreur, par statut HTTP                                            |
-| `input`                 | Champs à ajouter ou remplacer (`{ page: z.coerce.number() }`), comme dans `input()`    |
+| `input`                 | Champs à ajouter ou remplacer (`{ page: z.coerce.number() }`), comme dans `input()` ; un champ racine remplace les champs découverts dans sa source |
 | `name`                  | Nom de l'opération. Par défaut : le nom du handler                                     |
 | `namespace`             | Namespace. Par défaut : `@EndpointNamespace()` ou les segments fixes du chemin du controller |
 | `meta`                  | Description libre                                                                      |
 
 ## Générer
 
-Lancez la découverte depuis un script de développement ; l'application n'a pas besoin d'écouter :
+Générez le contrat avec la [CLI](./cli.md), depuis un `polycanal.config.ts` dont la source est `nestSource()` :
 
-```ts title="scripts/generate-contract.ts"
-import { NestFactory } from '@nestjs/core';
-import { generateNestContract } from '@polycanal/nest';
-import { AppModule } from '../src/app.module';
-
-const app = await NestFactory.create(AppModule, { logger: false });
-app.setGlobalPrefix('api');
-
-const { report } = generateNestContract(app, { output: '../shared/src/contract.generated.ts' });
-console.log(report);
-
-await app.close();
+```ts
+source: nestSource({ app: () => NestFactory.create(AppModule, { preview: true, logger: false }) }),
 ```
+
+`preview: true` construit le graphe des modules sans créer de provider : rien ne se connecte à une base de données. Les
+schémas trouvés dans les `schemaModules` configurés sont importés par le contrat généré, et un corps validé par l'un
+d'eux reste un champ racine `body` entier.
+
+`generateNestContract(app, options)` et `discoverNestContract(app, options)` restent disponibles pour des scripts
+personnalisés ; leur option `resolveSchema` est celle qu'utilise la CLI pour importer les schémas.
 
 ## Ce qui est découvert
 

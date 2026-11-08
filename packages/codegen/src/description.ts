@@ -58,3 +58,29 @@ export function operationId(operation: OperationDescription): string {
 }
 
 export const SCHEMA_REF_PREFIX = '#/schemas/';
+
+/**
+ * Keyword marking a schema the generated contract imports instead of generating: the runtime schema itself, exported
+ * by a module the front end can import (e.g. a shared package). The other keywords stay a plain JSON Schema of it.
+ */
+export const IMPORT_KEYWORD = 'x-polycanal-import';
+
+/** Where the generated contract imports a schema from. */
+export interface SchemaImport {
+  /** Module specifier, as the generated file imports it (e.g. `@my-app/shared`). */
+  readonly from: string;
+  /** Exported name. */
+  readonly name: string;
+}
+
+/** `schema` marked to be imported from `ref` by the generated contract. */
+export function importedSchema(schema: JsonSchema, ref: SchemaImport): JsonSchema {
+  return { ...(typeof schema === 'object' ? schema : {}), [IMPORT_KEYWORD]: { from: ref.from, name: ref.name } };
+}
+
+/** The import a schema is marked with, `undefined` when it is generated. */
+export function schemaImportOf(schema: JsonSchema): SchemaImport | undefined {
+  const ref = typeof schema === 'object' ? schema[IMPORT_KEYWORD] : undefined;
+
+  return typeof ref === 'object' && ref !== null ? (ref as SchemaImport) : undefined;
+}

@@ -33,28 +33,25 @@ export class LoginController {
 |----------------------|--------------------------------------------------------------------------------------|
 | `output`             | Response schema. Required unless `outputOf` finds one                                |
 | `errors`             | Error body schemas by HTTP status                                                    |
-| `input`              | Fields to add or replace (`{ page: z.coerce.number() }`), as in `input()`            |
+| `input`              | Fields to add or replace (`{ page: z.coerce.number() }`), as in `input()`; a root field replaces the fields discovered in its source |
 | `name`               | Operation name. Default: the handler name                                            |
 | `namespace`          | Namespace. Default: `@EndpointNamespace()` or the static segments of the controller path |
 | `meta`               | Free description                                                                     |
 
 ## Generating
 
-Run discovery from a development script; the application does not need to listen:
+Generate the contract with the [CLI](./cli.md), from a `polycanal.config.ts` whose source is `nestSource()`:
 
-```ts title="scripts/generate-contract.ts"
-import { NestFactory } from '@nestjs/core';
-import { generateNestContract } from '@polycanal/nest';
-import { AppModule } from '../src/app.module';
-
-const app = await NestFactory.create(AppModule, { logger: false });
-app.setGlobalPrefix('api');
-
-const { report } = generateNestContract(app, { output: '../shared/src/contract.generated.ts' });
-console.log(report);
-
-await app.close();
+```ts
+source: nestSource({ app: () => NestFactory.create(AppModule, { preview: true, logger: false }) }),
 ```
+
+`preview: true` builds the module graph without creating any provider: nothing connects to a database. Schemas found in
+the configured `schemaModules` are imported by the generated contract, and a body validated by one of them stays a
+whole root `body` field.
+
+`generateNestContract(app, options)` and `discoverNestContract(app, options)` stay available for custom scripts; their
+`resolveSchema` option is what the CLI uses to import schemas.
 
 ## What is discovered
 

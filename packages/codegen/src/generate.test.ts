@@ -6,7 +6,7 @@ import { zodDriver } from '@polycanal/zod';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { describeContract } from './describe.js';
-import type { ContractDescription } from './description.js';
+import { type ContractDescription, importedSchema } from './description.js';
 import { generateContractSource } from './generate.js';
 
 const ws = (name: string) => ({ driver: 'ws', family: 'event' as const, sources: [], name });
@@ -142,6 +142,102 @@ describe('generateContractSource()', () => {
     const loaded = (await load(source, 'named')) as unknown as { api: ContractTree; UserSchema: z.ZodType };
     expect(loaded.UserSchema.safeParse({ id: 'a', manager: { id: 'b' } }).success).toBe(true);
     expect(loaded.UserSchema.safeParse({ id: 'a', manager: { id: 1 } }).success).toBe(false);
+  });
+
+  it('imports marked schemas instead of generating them, so they keep their transforms and refinements', async () => {
+    mkdirSync(outputDir, { recursive: true });
+    writeFileSync(
+      `${outputDir}shared.ts`,
+      [
+        "import { z } from 'zod';",
+        "export const RenameSchema = z.object({ name: z.string().trim().min(1, 'Name required.') });",
+        'export const HouseholdSchema = z.object({ id: z.string(), name: z.string() });',
+      ].join('\n'),
+    );
+    const description: ContractDescription = {
+      operations: [
+        {
+          family: 'action',
+          path: ['households', 'rename'],
+          binding: rest.patch('/households/:id'),
+          input: {
+            kind: 'fields',
+            fields: [
+              { name: 'id', schema: { type: 'string' }, required: true, source: 'path' },
+              {
+                name: 'body',
+                schema: importedSchema({ type: 'object' }, { from: './shared.js', name: 'RenameSchema' }),
+                required: true,
+                source: 'body',
+                root: true,
+              },
+            ],
+          },
+          output: importedSchema({ type: 'object' }, { from: './shared.js', name: 'HouseholdSchema' }),
+        },
+      ],
+    };
+
+    const source = generateContractSource(description, options);
+    expect(source).toContain("import { HouseholdSchema, RenameSchema } from './shared.js';");
+    expect(source).toContain("body: { source: 'body', root: true, schema: RenameSchema },");
+    expect(source).toContain('output: HouseholdSchema,');
+    expect(
+      generateContractSource(
+        {
+          operations: [
+            {
+              family: 'action',
+              path: ['create'],
+              binding: rest.post('/households'),
+              input: {
+                kind: 'fields',
+                fields: [
+                  {
+                    name: 'body',
+                    schema: importedSchema({}, { from: './shared.js', name: 'OptionalSchema' }),
+                    required: false,
+                    source: 'body',
+                    root: true,
+                  },
+                ],
+              },
+              output: { type: 'object' },
+            },
+          ],
+        },
+        options,
+      ),
+    ).toContain("body: { source: 'body', root: true, schema: OptionalSchema },");
+
+    const { contract } = await load(source, 'imported');
+    const fetchMock = vi.fn(async (_url: unknown, init?: RequestInit) =>
+      Response.json({ id: 'h1', name: JSON.parse(String(init?.body)).name }),
+    );
+    const server = createClient(contract, { drivers: [fetchRest({ fetch: fetchMock })] }) as unknown as {
+      households: { rename(input: unknown): Promise<unknown> };
+    };
+
+    await expect(server.households.rename({ id: 'h1', body: { name: '  Home ' } })).resolves.toEqual({
+      id: 'h1',
+      name: 'Home',
+    });
+    await expect(server.households.rename({ id: 'h1', body: { name: ' ' } })).rejects.toMatchObject({
+      kind: 'input',
+      issues: [expect.objectContaining({ message: 'Name required.' })],
+    });
+  });
+
+  it('refuses two schemas of the same name from different modules', () => {
+    const output = (from: string) => importedSchema({}, { from, name: 'UserSchema' });
+    const description: ContractDescription = {
+      operations: [
+        { family: 'action', path: ['a'], binding: rest.get('/a'), output: output('./one.js') },
+        { family: 'action', path: ['b'], binding: rest.get('/b'), output: output('./two.js') },
+      ],
+    };
+
+    expect(() => generateContractSource(description, options)).toThrow(/imported from both/);
   });
 
   it('quotes names that are not identifiers', () => {

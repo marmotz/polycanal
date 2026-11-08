@@ -1,5 +1,4 @@
 import type { INestApplicationContext } from '@nestjs/common';
-import { DiscoveryService, ModulesContainer } from '@nestjs/core';
 import {
   type ActionDescription,
   acceptsUndefined,
@@ -7,8 +6,10 @@ import {
   describeContract,
   describeSchema,
   type FieldDescription,
+  importedSchema,
   type MergeConflict,
   mergeDescriptions,
+  type SchemaImport,
 } from '@polycanal/codegen';
 import { type ContractTree, isStandardSchema, type JsonSchema, type StandardSchemaV1 } from '@polycanal/core';
 import { type HttpMethod, rest } from '@polycanal/rest';
@@ -47,6 +48,11 @@ export interface NestDiscoveryReport {
   readonly warnings: readonly string[];
   /** Disagreements between the config and the discovered routes (the config wins). */
   readonly conflicts: readonly MergeConflict[];
+  /**
+   * With `resolveSchema`: runtime schemas it did not find, generated from their JSON Schema instead of imported. They
+   * lose what JSON Schema cannot express (transforms, refinements, custom messages).
+   */
+  readonly regenerated: readonly string[];
 }
 
 export interface NestDiscoveryOptions {
@@ -63,6 +69,12 @@ export interface NestDiscoveryOptions {
   readonly schemaOf?: (pipe: unknown) => StandardSchemaV1 | undefined;
   /** Finds the response schema of a handler when `@Endpoint()` has none (e.g. a project `@ZodResponse()`). */
   readonly outputOf?: (controller: Constructor, handler: string) => StandardSchemaV1 | undefined;
+  /**
+   * Where the generated contract can import a runtime schema from (e.g. the shared package exporting it), so that the
+   * front end validates with the very same schema. A body or query schema found this way is kept whole, as a root
+   * field. Schemas it does not find are generated from JSON Schema and listed in `report.regenerated`.
+   */
+  readonly resolveSchema?: (schema: StandardSchemaV1) => SchemaImport | undefined;
 }
 
 export interface NestDiscovery {
@@ -78,25 +90,67 @@ interface RouteArgument {
 
 class Skip extends Error {}
 
+interface ContainerLike {
+  getModules(): ReadonlyMap<unknown, { readonly controllers: ReadonlyMap<unknown, { readonly metatype: unknown }> }>;
+}
+
+/**
+ * Controllers of every module, read from the application's own container rather than through `@nestjs/core` tokens:
+ * discovery works whatever copy of Nest this package resolves (linked package, several Nest versions in a monorepo).
+ */
+function controllersOf(app: INestApplicationContext): unknown[] {
+  const container = (app as unknown as { readonly container?: ContainerLike }).container;
+
+  if (container === undefined || typeof container.getModules !== 'function') {
+    throw new TypeError('discoverNestContract(): expected a Nest application or testing module');
+  }
+
+  return [...container.getModules().values()].flatMap((module) =>
+    [...module.controllers.values()].map((wrapper) => wrapper.metatype),
+  );
+}
+
 /**
  * Discovers the routes of a Nest application and describes the endpoints that can be (spec §7). The application only
  * needs to be created (`NestFactory.create()` or a testing module), not listening.
  */
 export function discoverNestContract(app: INestApplicationContext, options: NestDiscoveryOptions = {}): NestDiscovery {
-  const discovery = new DiscoveryService(app.get(ModulesContainer));
   const prefix = options.globalPrefix ?? readGlobalPrefix(app);
   const schemaOf = options.schemaOf ?? defaultSchemaOf;
   const undescribed: NestRoute[] = [];
   const skipped: { route: NestRoute; reason: string }[] = [];
   const warnings: string[] = [];
   const operations: ActionDescription[] = [];
+  // Schemas generated from JSON Schema, by where they were found; only those left in the contract are reported
+  const regeneratedAt = new Map<JsonSchema, string>();
+  const describe: SchemaDescriber = (schema, io, location) => {
+    const json = describeSchema(schema, io, location);
+    const ref = options.resolveSchema?.(schema);
 
-  for (const wrapper of discovery.getControllers()) {
-    const controller = wrapper.metatype as Constructor | undefined;
+    if (ref !== undefined) {
+      return importedSchema(json, ref);
+    }
 
-    if (typeof controller !== 'function') {
+    if (options.resolveSchema !== undefined && typeof json === 'object') {
+      regeneratedAt.set(json, location);
+    }
+
+    return json;
+  };
+  const inherit = (child: JsonSchema, parent: JsonSchema) => {
+    const location = regeneratedAt.get(parent);
+
+    if (location !== undefined && typeof child === 'object') {
+      regeneratedAt.set(child, location);
+    }
+  };
+
+  for (const metatype of controllersOf(app)) {
+    if (typeof metatype !== 'function') {
       continue;
     }
+
+    const controller = metatype as Constructor;
 
     const controllerPaths = asPaths(Reflect.getMetadata(PATH_METADATA, controller));
 
@@ -134,6 +188,9 @@ export function discoverNestContract(app: INestApplicationContext, options: Nest
             options,
             warnings,
             controllerPaths,
+            describe,
+            inherit,
+            resolved: (schema) => options.resolveSchema?.(schema) !== undefined,
           }),
         );
       } catch (error) {
@@ -147,21 +204,52 @@ export function discoverNestContract(app: INestApplicationContext, options: Nest
   }
 
   const discovered: ContractDescription = { operations };
+  const { description, conflicts } =
+    options.config === undefined
+      ? { description: discovered, conflicts: [] }
+      : mergeDescriptions(describeContract(options.config), discovered);
+  const regenerated = [
+    ...new Set(
+      schemasOf(description)
+        .map((schema) => regeneratedAt.get(schema))
+        .filter((location) => location !== undefined),
+    ),
+  ];
 
-  if (options.config === undefined) {
-    return { description: discovered, report: { undescribed, skipped, warnings, conflicts: [] } };
-  }
-
-  const { description, conflicts } = mergeDescriptions(describeContract(options.config), discovered);
-
-  return { description, report: { undescribed, skipped, warnings, conflicts } };
+  return { description, report: { undescribed, skipped, warnings, conflicts, regenerated } };
 }
+
+/** Top-level schemas of the operations: fields, inputs, outputs and errors. */
+function schemasOf(description: ContractDescription): JsonSchema[] {
+  return description.operations.flatMap((operation) => {
+    if (operation.family !== 'action') {
+      return [];
+    }
+
+    const input =
+      operation.input === undefined
+        ? []
+        : operation.input.kind === 'schema'
+          ? [operation.input.schema]
+          : operation.input.fields.map((field) => field.schema);
+
+    return [...input, operation.output, ...Object.values(operation.errors ?? {})];
+  });
+}
+
+/** JSON Schema of a runtime schema, marked as imported when `resolveSchema` finds it. */
+type SchemaDescriber = (schema: StandardSchemaV1, io: 'input' | 'output', location: string) => JsonSchema;
 
 interface DescribeContext {
   readonly schemaOf: (pipe: unknown) => StandardSchemaV1 | undefined;
   readonly options: NestDiscoveryOptions;
   readonly warnings: string[];
   readonly controllerPaths: readonly string[];
+  readonly describe: SchemaDescriber;
+  /** A schema taken out of a regenerated one (a property of a spread body) is regenerated with it. */
+  readonly inherit: (child: JsonSchema, parent: JsonSchema) => void;
+  /** Whether a schema is imported by the generated contract. */
+  readonly resolved: (schema: StandardSchemaV1) => boolean;
 }
 
 function describeRoute(
@@ -199,10 +287,10 @@ function describeRoute(
 
     switch (type) {
       case PARAM_TYPES.BODY:
-        addSpreadOrField(fields, 'body', data, schema, label, context.warnings);
+        addSpreadOrField(fields, 'body', data, schema, label, context);
         break;
       case PARAM_TYPES.QUERY:
-        addSpreadOrField(fields, 'query', data, schema, label, context.warnings);
+        addSpreadOrField(fields, 'query', data, schema, label, context);
         break;
       case PARAM_TYPES.PARAM:
         if (data !== undefined) {
@@ -227,7 +315,7 @@ function describeRoute(
     const descriptor = isStandardSchema(override) ? { schema: override } : override;
     fields.replace(name, {
       name,
-      schema: describeSchema(descriptor.schema, 'input', `${label} input field "${name}"`),
+      schema: context.describe(descriptor.schema, 'input', `${label} input field "${name}"`),
       required: !acceptsUndefined(descriptor.schema),
       ...(descriptor.source === undefined ? {} : { source: descriptor.source }),
       ...(descriptor.alias === undefined ? {} : { alias: descriptor.alias }),
@@ -251,19 +339,19 @@ function describeRoute(
       httpCode === undefined ? {} : { status: httpCode },
     ),
     ...(all.length === 0 ? {} : { input: { kind: 'fields', fields: all } }),
-    output: describeSchema(output, 'output', `${label} output`),
+    output: context.describe(output, 'output', `${label} output`),
     ...(errors.length === 0
       ? {}
       : {
           errors: Object.fromEntries(
-            errors.map(([status, schema]) => [status, describeSchema(schema, 'output', `${label} error ${status}`)]),
+            errors.map(([status, schema]) => [status, context.describe(schema, 'output', `${label} error ${status}`)]),
           ),
         }),
     ...(decorated.meta === undefined ? {} : { meta: decorated.meta }),
   };
 
   function field(name: string, source: string, schema: StandardSchemaV1 | JsonSchema, required: boolean, raw: boolean) {
-    const json = isStandardSchema(schema) ? describeSchema(schema, 'input', `${label} field "${name}"`) : schema;
+    const json = isStandardSchema(schema) ? context.describe(schema, 'input', `${label} field "${name}"`) : schema;
     const isRequired = isStandardSchema(schema) ? !acceptsUndefined(schema) : required;
 
     return { name, source, schema: json, required: isRequired, raw };
@@ -276,7 +364,7 @@ function addSpreadOrField(
   data: string | undefined,
   schema: StandardSchemaV1 | undefined,
   label: string,
-  warnings: string[],
+  context: DescribeContext,
 ): void {
   if (data !== undefined) {
     const json =
@@ -284,7 +372,7 @@ function addSpreadOrField(
         ? source === 'query'
           ? { type: 'string' }
           : true
-        : describeSchema(schema, 'input', `${label} ${source} "${data}"`);
+        : context.describe(schema, 'input', `${label} ${source} "${data}"`);
     fields.add({
       name: data,
       source,
@@ -297,12 +385,28 @@ function addSpreadOrField(
   }
 
   if (schema === undefined) {
-    warnings.push(`${label}: whole @${source === 'body' ? 'Body' : 'Query'}() without runtime schema, not described`);
+    context.warnings.push(
+      `${label}: whole @${source === 'body' ? 'Body' : 'Query'}() without runtime schema, not described`,
+    );
 
     return;
   }
 
-  const json = describeSchema(schema, 'input', `${label} ${source}`);
+  // An imported schema is kept whole: its object-level rules (refinements, transforms) apply to the whole value
+  if (context.resolved(schema)) {
+    fields.add({
+      name: source,
+      source,
+      schema: context.describe(schema, 'input', `${label} ${source}`),
+      required: !acceptsUndefined(schema),
+      raw: false,
+      root: true,
+    });
+
+    return;
+  }
+
+  const json = context.describe(schema, 'input', `${label} ${source}`);
   const properties = typeof json === 'object' ? (json.properties as Record<string, JsonSchema> | undefined) : undefined;
 
   if (properties === undefined || !Object.keys(properties).every((name) => /^[A-Za-z_$][\w$]*$/.test(name))) {
@@ -320,6 +424,7 @@ function addSpreadOrField(
   );
 
   for (const [name, property] of Object.entries(properties)) {
+    context.inherit(property, json);
     fields.add({ name, source, schema: property, required: required.has(name), raw: false });
   }
 }
@@ -369,7 +474,21 @@ class FieldSet {
   }
 
   replace(name: string, description: FieldDescription): void {
+    // A root field is the whole content of its source: it replaces the fields discovered there
+    if (description.root && description.source !== undefined) {
+      for (const [other, field] of this.fields) {
+        if (other !== name && field.source === description.source) {
+          this.fields.delete(other);
+          this.dropRaw(other);
+        }
+      }
+    }
+
     this.fields.set(name, description);
+    this.dropRaw(name);
+  }
+
+  private dropRaw(name: string): void {
     const index = this.raw.indexOf(name);
 
     if (index !== -1) {

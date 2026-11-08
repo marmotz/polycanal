@@ -19,6 +19,7 @@ Work in progress. See [the documentation](apps/docs) (`bun run docs`) and [the s
 | `@polycanal/openapi`  | OpenAPI 3 import and `polycanal-openapi` CLI                                  |
 | `@polycanal/nest`     | NestJS route discovery, `@Endpoint()` decorators, contract generation         |
 | `@polycanal/express`  | Express 4/5 route discovery, `endpoint()` markers, contract generation        |
+| `@polycanal/cli`      | `polycanal generate`: contracts from a `polycanal.config.ts`                  |
 
 ## Development
 

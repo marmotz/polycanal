@@ -14,3 +14,4 @@ export {
   type NestRoute,
 } from './discover.js';
 export { type GenerateNestContractOptions, generateNestContract } from './generate.js';
+export { type NestSourceOptions, nestSource } from './source.js';

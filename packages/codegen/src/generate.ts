@@ -14,6 +14,7 @@ import {
   type OperationDescription,
   operationId,
   SCHEMA_REF_PREFIX,
+  schemaImportOf,
 } from './description.js';
 import { hoistDefinitions } from './hoist.js';
 
@@ -44,7 +45,15 @@ export function generateContractSource(description: ContractDescription, options
     resolveRef: (ref) => identifiers.get(refName(ref)) ?? fail(`unknown schema reference "${ref}"`),
     isLazyRef: (ref) => !emitted.has(refName(ref)),
   };
-  const schema = (value: JsonSchema): string => imports.use(options.validation.generate(value, context));
+  const schema = (value: JsonSchema): string => {
+    const imported = schemaImportOf(value);
+
+    return imports.use(
+      imported === undefined
+        ? options.validation.generate(value, context)
+        : { code: imported.name, imports: [{ from: imported.from, names: [imported.name] }] },
+    );
+  };
   const emitters = new Map(options.bindings.map((emitter) => [emitter.driver, emitter]));
 
   const declarations = Object.entries(schemas).map(([name, value]) => {
@@ -153,7 +162,8 @@ function inputCode(
     const hasDefault = typeof field.schema === 'object' && field.schema.default !== undefined;
     let code = schema(field.schema);
 
-    if (!field.required && !hasDefault) {
+    // An imported schema says itself whether it accepts undefined
+    if (!field.required && !hasDefault && schemaImportOf(field.schema) === undefined) {
       code = imports.use(validation.optional({ code, imports: [] }));
     }
 
@@ -266,11 +276,19 @@ function fail(message: string): never {
 
 class ImportSet {
   private readonly modules = new Map<string, Set<string>>();
+  private readonly origins = new Map<string, string>();
 
   add(entry: CodeImport): void {
     const names = this.modules.get(entry.from) ?? new Set();
 
     for (const name of entry.names) {
+      const origin = this.origins.get(name);
+
+      if (origin !== undefined && origin !== entry.from) {
+        fail(`"${name}" is imported from both "${origin}" and "${entry.from}"`);
+      }
+
+      this.origins.set(name, entry.from);
       names.add(name);
     }
 

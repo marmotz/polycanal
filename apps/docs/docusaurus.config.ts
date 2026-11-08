@@ -5,7 +5,7 @@ import { themes as prismThemes } from 'prism-react-renderer';
 const GITHUB_REPO = 'https://github.com/marmotz/polycanal';
 
 /** Packages documented in the generated API reference. */
-const API_PACKAGES = ['core', 'rest', 'angular', 'zod', 'codegen', 'openapi', 'nest', 'express'];
+const API_PACKAGES = ['core', 'rest', 'angular', 'zod', 'codegen', 'openapi', 'nest', 'express', 'cli'];
 
 const config: Config = {
   title: 'Polycanal',
