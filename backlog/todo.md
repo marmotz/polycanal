@@ -4,7 +4,7 @@
 
 ## Uploads de fichiers ·  [overview](features/uploads/overview.md)
 
-_tâches créées — voir [technical.md](features/uploads/technical.md)_ — 8/9 tasks done
+_terminé — voir [technical.md](features/uploads/technical.md)_ — 9/9 tasks done
 
 | Done | Issue                                               | Title                                                                         | Blocked by |
 |------|-----------------------------------------------------|-------------------------------------------------------------------------------|------------|
@@ -16,4 +16,4 @@ _tâches créées — voir [technical.md](features/uploads/technical.md)_ — 8/
 | [x]  | [#6](https://github.com/marmotz/polycanal/issues/6) | angular : FormData, réponses blob et progression dans angularRest             | #1, #4     |
 | [x]  | [#7](https://github.com/marmotz/polycanal/issues/7) | nest : découverte de @UploadedFile(s) et pipes de validation multipart        | #4, #3     |
 | [x]  | [#8](https://github.com/marmotz/polycanal/issues/8) | express : détection de multer et validation multipart dans endpoint()         | #4, #3     |
-| [ ]  | [#9](https://github.com/marmotz/polycanal/issues/9) | openapi : import des corps multipart et des réponses binaires                 | #4, #2     |
+| [x]  | [#9](https://github.com/marmotz/polycanal/issues/9) | openapi : import des corps multipart et des réponses binaires                 | #4, #2     |

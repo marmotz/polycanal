@@ -34,10 +34,15 @@ OpenAPI 3.0 and 3.1 documents in JSON are supported (parse YAML first if needed)
 - **Parameters:** path, query and header parameters become fields with their source; names that are not identifiers
   are camel-cased and aliased (`X-Tenant` → `xTenant`).
 - **Bodies:** an object JSON body is spread into `body` fields; any other body becomes a root `body` field.
+- **File uploads:** without JSON content, an object `multipart/form-data` body is spread into `body` fields and the
+  binding gets `body: 'multipart'`. `format: binary` properties become `z.file()`, constrained by the
+  `encoding.<field>.contentType` media types (wildcards such as `image/*` are left out).
 - **Responses:** the first 2xx JSON response is the output (no content: `z.void()`); 4xx and 5xx JSON responses
-  become `errors`.
+  become `errors`. A 2xx binary response (`format: binary` schema, or `application/octet-stream`, `image/*`,
+  `application/pdf`... without schema) gives `response: 'blob'` and a `z.file()` output.
 - **Schemas:** `components.schemas` become exported constants (`PetSchema`), recursive ones through `z.lazy()`.
-- **Skipped, with a warning:** `HEAD`, `OPTIONS` and `TRACE` operations, cookie parameters, non-JSON request bodies,
+- **Skipped, with a warning:** `HEAD`, `OPTIONS` and `TRACE` operations, cookie parameters, request bodies that are
+  neither JSON nor multipart, multipart bodies that are not objects or that belong to a `GET` / `DELETE` operation,
   path parameters that are not identifiers.
 
 ## Generated code

@@ -1,7 +1,7 @@
 import type { ActionDescription, ContractDescription, FieldDescription, InputDescription } from '@polycanal/codegen';
 import { SCHEMA_REF_PREFIX } from '@polycanal/codegen';
 import { type JsonSchema, type OperationMeta, VOID_KEYWORD } from '@polycanal/core';
-import { type HttpMethod, rest } from '@polycanal/rest';
+import { type HttpMethod, type RestBindingOptions, rest } from '@polycanal/rest';
 
 type Json = { readonly [key: string]: unknown };
 
@@ -109,17 +109,21 @@ function importOperation(
     return `:${name}`;
   });
   const fields = parameterFields(item, operation, resolver, info, warnings);
-  const body = bodyFields(operation, resolver, fields);
-  const allFields = [...fields, ...body];
+  const body = bodyFields(operation, resolver, fields, info);
+  const allFields = [...fields, ...body.fields];
   const input: InputDescription | undefined =
     allFields.length === 0 ? undefined : { kind: 'fields', fields: allFields };
-  const { output, errors } = responses(operation, resolver);
+  const { output, errors, blob } = responses(operation, resolver);
   const meta = operationMeta(operation);
+  const options: RestBindingOptions = {
+    ...(body.multipart ? { body: 'multipart' } : {}),
+    ...(blob ? { response: 'blob' } : {}),
+  };
 
   return {
     family: 'action',
     path,
-    binding: rest[info.method.toLowerCase() as Lowercase<HttpMethod>](restPath),
+    binding: rest[info.method.toLowerCase() as Lowercase<HttpMethod>](restPath, options),
     ...(input === undefined ? {} : { input }),
     output,
     ...(Object.keys(errors).length === 0 ? {} : { errors }),
@@ -168,18 +172,26 @@ function parameterFields(
   return fields;
 }
 
-function bodyFields(operation: Json, resolver: Resolver, parameters: readonly FieldDescription[]): FieldDescription[] {
+function bodyFields(
+  operation: Json,
+  resolver: Resolver,
+  parameters: readonly FieldDescription[],
+  info: OperationInfo,
+): { fields: FieldDescription[]; multipart: boolean } {
   if (operation.requestBody === undefined) {
-    return [];
+    return { fields: [], multipart: false };
   }
 
   const body = resolver.resolve(operation.requestBody);
-  const schema = jsonContent(body.content);
+  const json = jsonContent(body.content);
+  const multipart =
+    json === undefined ? mediaContent(body.content, (type) => type === 'multipart/form-data') : undefined;
 
-  if (schema === undefined) {
-    throw new SkipOperation('request body has no JSON content');
+  if (json === undefined && multipart === undefined) {
+    throw new SkipOperation('request body has no JSON or multipart content');
   }
 
+  const schema = json ?? multipart?.schema;
   const required = body.required === true;
   const resolved = resolver.resolveSchema(schema);
   const properties = resolved.properties as Record<string, unknown> | undefined;
@@ -189,23 +201,99 @@ function bodyFields(operation: Json, resolver: Resolver, parameters: readonly Fi
     Object.keys(properties).every((name) => /^[A-Za-z_$][\w$]*$/.test(name) && !taken.has(name)) &&
     resolved.additionalProperties === undefined;
 
+  if (multipart !== undefined) {
+    if (info.method === 'GET' || info.method === 'DELETE') {
+      throw new SkipOperation('multipart request body on a GET or DELETE operation');
+    }
+
+    if (!spreadable) {
+      throw new SkipOperation('multipart request body is not an object with identifier property names');
+    }
+  }
+
   if (!spreadable) {
-    return [
-      { name: uniqueName('body', taken, 'body'), schema: convertSchema(schema), required, source: 'body', root: true },
-    ];
+    return {
+      fields: [
+        {
+          name: uniqueName('body', taken, 'body'),
+          schema: convertSchema(schema),
+          required,
+          source: 'body',
+          root: true,
+        },
+      ],
+      multipart: false,
+    };
   }
 
   const requiredProperties = new Set(asArray(resolved.required) as string[]);
+  const encoding = (multipart?.media.encoding ?? {}) as Record<string, Json | undefined>;
 
-  return Object.entries(properties).map(([name, property]) => ({
-    name,
-    schema: convertSchema(property),
-    required: required && requiredProperties.has(name),
-    source: 'body',
-  }));
+  return {
+    fields: Object.entries(properties).map(([name, property]) => ({
+      name,
+      schema:
+        multipart === undefined
+          ? convertSchema(property)
+          : multipartPart(convertSchema(property), encoding[name]?.contentType),
+      required: required && requiredProperties.has(name),
+      source: 'body',
+    })),
+    multipart: multipart !== undefined,
+  };
 }
 
-function responses(operation: Json, resolver: Resolver): { output: JsonSchema; errors: Record<string, JsonSchema> } {
+/**
+ * Schema of a multipart part. A file part (`format: binary`, or an OpenAPI 3.1 string with a `contentMediaType`) gets
+ * the media types of its `encoding.contentType` as `contentMediaType`, also for the items of a file array.
+ */
+function multipartPart(schema: JsonSchema, contentType: unknown): JsonSchema {
+  if (typeof schema === 'boolean') {
+    return schema;
+  }
+
+  if (schema.type === 'array' && typeof schema.items === 'object' && schema.items !== null) {
+    return { ...schema, items: multipartPart(schema.items as JsonSchema, contentType) };
+  }
+
+  if (!isFileSchema(schema)) {
+    return schema;
+  }
+
+  const file: Record<string, unknown> = { ...schema, format: 'binary' };
+  const types =
+    typeof contentType === 'string'
+      ? contentType
+          .split(',')
+          .map(mediaType)
+          .filter((type) => type !== '' && !type.includes('*'))
+      : [];
+
+  if (file.contentMediaType === undefined && file.anyOf === undefined && types.length > 0) {
+    if (types.length === 1) {
+      file.contentMediaType = types[0];
+    } else {
+      file.anyOf = types.map((type) => ({ contentMediaType: type }));
+    }
+  }
+
+  return file;
+}
+
+function isFileSchema(schema: Json): boolean {
+  const string = schema.type === 'string' || (Array.isArray(schema.type) && schema.type.includes('string'));
+
+  return (
+    string &&
+    (schema.format === 'binary' ||
+      (schema.format === undefined && schema.contentEncoding === undefined && schema.contentMediaType !== undefined))
+  );
+}
+
+function responses(
+  operation: Json,
+  resolver: Resolver,
+): { output: JsonSchema; errors: Record<string, JsonSchema>; blob: boolean } {
   const entries = Object.entries((operation.responses ?? {}) as Record<string, unknown>);
   const success = entries.filter(([status]) => /^2\d\d$/.test(status)).sort(([a], [b]) => a.localeCompare(b))[0];
   const errors: Record<string, JsonSchema> = {};
@@ -221,26 +309,88 @@ function responses(operation: Json, resolver: Resolver): { output: JsonSchema; e
   }
 
   if (success === undefined) {
-    return { output: true, errors };
+    return { output: true, errors, blob: false };
   }
 
-  const schema = jsonContent(resolver.resolve(success[1]).content);
+  const content = resolver.resolve(success[1]).content;
+  const schema = jsonContent(content);
 
-  return { output: schema === undefined ? { [VOID_KEYWORD]: true } : convertSchema(schema), errors };
+  if (schema !== undefined) {
+    return { output: convertSchema(schema), errors, blob: false };
+  }
+
+  const binary = binaryContent(content, resolver);
+
+  return binary === undefined
+    ? { output: { [VOID_KEYWORD]: true }, errors, blob: false }
+    : { output: binary, errors, blob: true };
 }
 
-function jsonContent(content: unknown): unknown {
+/**
+ * File schema of a binary response: a media type whose schema is a binary string, or a binary media type
+ * (`application/octet-stream`, `image/*`...) without schema (OpenAPI 3.1 style).
+ */
+function binaryContent(content: unknown, resolver: Resolver): JsonSchema | undefined {
   if (typeof content !== 'object' || content === null) {
     return undefined;
   }
 
-  const entry = Object.entries(content).find(([media]) => {
-    const type = media.split(';')[0]?.trim().toLowerCase() ?? '';
+  for (const [media, value] of Object.entries(content)) {
+    const type = mediaType(media);
 
-    return type === 'application/json' || type.endsWith('+json');
-  });
+    const schema = (value as Json | undefined)?.schema;
 
-  return entry === undefined ? undefined : ((entry[1] as Json).schema ?? true);
+    if (schema === undefined) {
+      if (isBinaryMediaType(type)) {
+        return { type: 'string', format: 'binary' };
+      }
+
+      continue;
+    }
+
+    const resolved = resolver.resolveSchema(schema);
+
+    if (resolved.type === 'string' && resolved.format === 'binary') {
+      return convertSchema(schema);
+    }
+  }
+
+  return undefined;
+}
+
+function jsonContent(content: unknown): unknown {
+  return mediaContent(content, (type) => type === 'application/json' || type.endsWith('+json'))?.schema;
+}
+
+function mediaContent(
+  content: unknown,
+  accept: (type: string) => boolean,
+): { media: Json; schema: unknown } | undefined {
+  if (typeof content !== 'object' || content === null) {
+    return undefined;
+  }
+
+  const entry = Object.entries(content).find(([media]) => accept(mediaType(media)));
+
+  if (entry === undefined) {
+    return undefined;
+  }
+
+  const media = (entry[1] ?? {}) as Json;
+
+  return { media, schema: media.schema ?? true };
+}
+
+function mediaType(media: string): string {
+  return media.split(';')[0]?.trim().toLowerCase() ?? '';
+}
+
+/** Media types read as a file even without a schema. */
+function isBinaryMediaType(type: string): boolean {
+  return (
+    ['application/octet-stream', 'application/pdf', 'application/zip'].includes(type) ||
+    ['image/', 'audio/', 'video/', 'font/'].some((prefix) => type.startsWith(prefix))
+  );
 }
 
 function operationMeta(operation: Json): OperationMeta | undefined {

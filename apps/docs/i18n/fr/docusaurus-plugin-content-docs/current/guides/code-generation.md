@@ -34,11 +34,16 @@ Les documents OpenAPI 3.0 et 3.1 au format JSON sont pris en charge (convertisse
 - **Paramètres :** les paramètres de chemin, de query et d'en-tête deviennent des champs avec leur source ; les noms
   qui ne sont pas des identifiants passent en camelCase avec un alias (`X-Tenant` → `xTenant`).
 - **Bodies :** un body JSON objet est étalé en champs `body` ; tout autre body devient un champ racine `body`.
+- **Envoi de fichiers :** sans contenu JSON, un body `multipart/form-data` objet est étalé en champs `body` et le
+  binding reçoit `body: 'multipart'`. Les propriétés `format: binary` deviennent des `z.file()`, contraints par les
+  types de média de `encoding.<champ>.contentType` (les jokers comme `image/*` sont ignorés).
 - **Réponses :** la première réponse JSON 2xx est l'output (sans contenu : `z.void()`) ; les réponses JSON 4xx et 5xx
-  deviennent des `errors`.
+  deviennent des `errors`. Une réponse 2xx binaire (schéma `format: binary`, ou `application/octet-stream`,
+  `image/*`, `application/pdf`... sans schéma) donne `response: 'blob'` et un output `z.file()`.
 - **Schémas :** `components.schemas` deviennent des constantes exportées (`PetSchema`), les récursifs via `z.lazy()`.
 - **Ignorés, avec un avertissement :** les opérations `HEAD`, `OPTIONS` et `TRACE`, les paramètres cookie, les bodies
-  de requête non JSON, les paramètres de chemin qui ne sont pas des identifiants.
+  de requête ni JSON ni multipart, les bodies multipart qui ne sont pas des objets ou qui appartiennent à une opération
+  `GET` / `DELETE`, les paramètres de chemin qui ne sont pas des identifiants.
 
 ## Code généré
 

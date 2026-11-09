@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { type ContractTree, createClient, VOID_KEYWORD } from '@polycanal/core';
 import { fetchRest } from '@polycanal/rest';
 import { afterAll, describe, expect, it, vi } from 'vitest';
+import { files } from './__fixtures__/files.js';
 import { petstore } from './__fixtures__/petstore.js';
 import { run } from './cli.js';
 import { generateFromOpenApi } from './generate.js';
@@ -12,8 +13,8 @@ const outputDir = fileURLToPath(new URL('../.test-output/', import.meta.url));
 
 afterAll(() => rmSync(outputDir, { recursive: true, force: true }));
 
-function operation(id: string) {
-  const found = importOpenApi(petstore).description.operations.find((candidate) => candidate.path.join('.') === id);
+function operation(id: string, document = petstore) {
+  const found = importOpenApi(document).description.operations.find((candidate) => candidate.path.join('.') === id);
 
   if (found?.family !== 'action') {
     throw new Error(`no action ${id}`);
@@ -107,7 +108,7 @@ describe('importOpenApi()', () => {
     expect(importOpenApi(petstore).warnings).toEqual([
       'HEAD /pets: method not supported, skipped',
       'GET /pets: cookie parameter "session" not supported, ignored',
-      'PATCH /pets/{petId}: request body has no JSON content, skipped',
+      'PATCH /pets/{petId}: request body has no JSON or multipart content, skipped',
       'GET /owners/{owner-id}: path parameter "owner-id" is not a valid identifier, skipped',
     ]);
   });
@@ -127,6 +128,99 @@ describe('importOpenApi()', () => {
       type: ['string', 'null'],
       exclusiveMinimum: 3,
     });
+  });
+});
+
+describe('importOpenApi() with files', () => {
+  it('spreads multipart bodies into body fields with a multipart binding', () => {
+    expect(operation('photos.uploadPhotos', files)).toMatchObject({
+      binding: { method: 'POST', path: '/photos', body: 'multipart', response: undefined },
+      input: {
+        kind: 'fields',
+        fields: [
+          {
+            name: 'cover',
+            source: 'body',
+            required: true,
+            schema: {
+              type: 'string',
+              format: 'binary',
+              maxLength: 5000000,
+              anyOf: [{ contentMediaType: 'image/png' }, { contentMediaType: 'image/jpeg' }],
+            },
+          },
+          { name: 'photos', source: 'body', required: false, schema: { type: 'array', items: { format: 'binary' } } },
+          { name: 'title', source: 'body', required: true, schema: { type: 'string' } },
+          { name: 'price', source: 'body', required: false, schema: { type: 'number' } },
+        ],
+      },
+      output: { type: 'object' },
+    });
+    // wildcard media types are not file constraints
+    expect(operation('photos.uploadPhotos', files).input).not.toHaveProperty('fields.1.schema.items.contentMediaType');
+  });
+
+  it('turns encoding content types and OpenAPI 3.1 media strings into file constraints', () => {
+    const { description } = importOpenApi({
+      openapi: '3.1.0',
+      paths: {
+        '/avatar': {
+          put: {
+            operationId: 'setAvatar',
+            requestBody: {
+              content: {
+                'multipart/form-data': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      avatar: { type: 'string', contentMediaType: 'image/webp' },
+                      scan: { type: 'string', format: 'binary' },
+                      meta: { type: 'object' },
+                    },
+                  },
+                  encoding: { scan: { contentType: 'application/pdf' }, meta: { contentType: 'application/json' } },
+                },
+              },
+            },
+            responses: { '204': { description: 'ok' } },
+          },
+        },
+      },
+    });
+
+    expect(description.operations[0]).toMatchObject({
+      binding: { body: 'multipart' },
+      input: {
+        fields: [
+          { name: 'avatar', schema: { type: 'string', format: 'binary', contentMediaType: 'image/webp' } },
+          { name: 'scan', schema: { type: 'string', format: 'binary', contentMediaType: 'application/pdf' } },
+          { name: 'meta', schema: { type: 'object' } },
+        ],
+      },
+    });
+  });
+
+  it('delivers binary success responses as files', () => {
+    expect(operation('photos.downloadPhoto', files)).toMatchObject({
+      binding: { method: 'GET', path: '/photos/:photoId', body: undefined, response: 'blob' },
+      output: { type: 'string', format: 'binary' },
+      errors: { 404: { type: 'object' } },
+    });
+    expect(operation('reports.downloadReport', files)).toMatchObject({
+      binding: { response: 'blob' },
+      output: { type: 'string', format: 'binary' },
+    });
+  });
+
+  it('keeps JSON bodies and responses on the codec', () => {
+    expect(operation('pets.createPet').binding).toMatchObject({ body: undefined, response: undefined });
+  });
+
+  it('skips multipart bodies it cannot send', () => {
+    expect(importOpenApi(files).warnings).toEqual([
+      'GET /photos: multipart request body on a GET or DELETE operation, skipped',
+      'PUT /photos/{photoId}: multipart request body is not an object with identifier property names, skipped',
+    ]);
   });
 });
 
@@ -156,6 +250,54 @@ describe('generateFromOpenApi()', () => {
     expect(fetchMock.mock.calls[0]?.[1]?.headers).toMatchObject({ 'x-tenant': 't1' });
     await expect(server.pets.listPets({ limit: 500, xTenant: 't1' })).rejects.toMatchObject({ kind: 'input' });
     await expect(server.pets.createPet({ age: 2 })).rejects.toMatchObject({ kind: 'input' });
+  });
+});
+
+describe('generateFromOpenApi() with files', () => {
+  it('generates z.file() schemas and file bindings that send and receive files', async () => {
+    const { source } = generateFromOpenApi(files, { exportName: 'filesContract' });
+
+    expect(source).toContain("rest.post('/photos', { body: 'multipart' })");
+    expect(source).toContain("rest.get('/photos/:photoId', { response: 'blob' })");
+    expect(source).toContain("z.file().max(5000000).mime(['image/png', 'image/jpeg'])");
+    expect(source).toContain("photos: { source: 'body', schema: z.array(z.file()).optional() }");
+    expect(source).toContain('output: z.file()');
+
+    mkdirSync(outputDir, { recursive: true });
+    writeFileSync(`${outputDir}files.ts`, source);
+    const { filesContract } = (await import(`${outputDir}files.ts`)) as { filesContract: ContractTree };
+
+    const fetchMock = vi.fn<typeof fetch>(async (url) =>
+      String(url).endsWith('/photos')
+        ? new Response(JSON.stringify({ id: 'p1' }), { status: 201, headers: { 'content-type': 'application/json' } })
+        : new Response(new Blob(['png-bytes'], { type: 'image/png' }), {
+            headers: { 'content-type': 'image/png', 'content-disposition': 'attachment; filename="p1.png"' },
+          }),
+    );
+    const client = createClient(filesContract, {
+      drivers: [fetchRest({ baseUrl: 'https://files.test', fetch: fetchMock })],
+    }) as unknown as {
+      photos: {
+        uploadPhotos: (input: unknown) => Promise<unknown>;
+        downloadPhoto: (input: unknown) => Promise<File>;
+      };
+    };
+
+    const cover = new File(['cover'], 'cover.png', { type: 'image/png' });
+
+    await expect(client.photos.uploadPhotos({ cover, title: 'Holidays', price: 12.5 })).resolves.toEqual({ id: 'p1' });
+    const body = fetchMock.mock.calls[0]?.[1]?.body as FormData;
+    expect(body).toBeInstanceOf(FormData);
+    expect((body.get('cover') as File).name).toBe('cover.png');
+    expect(body.get('price')).toBe('12.5');
+    await expect(
+      client.photos.uploadPhotos({ cover: new File(['x'], 'cover.gif', { type: 'image/gif' }), title: 'Holidays' }),
+    ).rejects.toMatchObject({ kind: 'input' });
+
+    const photo = await client.photos.downloadPhoto({ photoId: 'p1' });
+    expect(photo).toBeInstanceOf(File);
+    expect(photo.name).toBe('p1.png');
+    await expect(photo.text()).resolves.toBe('png-bytes');
   });
 });
 
