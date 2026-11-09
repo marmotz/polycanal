@@ -73,6 +73,44 @@ validateResponses(app, { onInvalid: process.env.NODE_ENV === 'production' ? 'log
 `onInvalid` vaut `'throw'` (défaut : journalisée et remplacée par une erreur 500), `'log'` (journalisée et envoyée quand
 même) ou une fonction appelée avec `{ route, issues, value }` avant l'envoi de la réponse.
 
+## Envoi de fichiers
+
+Une route derrière multer reçoit un corps multipart. Déclarez ses champs fichiers avec des schémas de fichier
+(`z.file()`, ou une liste) dans `endpoint({ input })`, et placez `endpoint()` après multer :
+
+```ts
+import multer from 'multer';
+
+const upload = multer({ storage: multer.memoryStorage() });
+
+app.post(
+  '/listings',
+  upload.array('photos'),
+  endpoint({
+    input: { photos: z.array(z.file().mime(['image/jpeg'])), title: z.string(), price: z.number() },
+    output: ListingSchema,
+  }),
+  createListing,
+);
+```
+
+La découverte reconnaît le middleware multer de la route et décrit un corps multipart (`body: 'multipart'` sur le
+binding). Des champs fichiers déclarés sans multer sur la route (multer monté sur l'application) sont décrits de la même
+façon.
+
+Avant d'appeler le handler, `endpoint()` valide :
+
+- les fichiers reçus (`req.file`, ou `req.files` en liste ou en objet de listes), convertis en `File` web depuis le
+  stockage mémoire, ou ouverts depuis le stockage disque sans être lus en entier ;
+- les champs texte de `req.body`, que multer livre toujours en chaînes : chacun est parsé en JSON quand il échoue en
+  chaîne (`"12.5"` passe `z.number()`, `"75001"` reste une chaîne). `req.body` est remplacé par la sortie des schémas.
+
+Un échec répond `400` avec `{ message, issues }` : `Invalid uploaded files` quand un fichier est en cause, `Invalid
+multipart body` sinon. Le handler lit toujours les fichiers multer dans `req.file` / `req.files`.
+
+Le rapport avertit quand multer est présent sans champ fichier déclaré, et quand `endpoint()` est placé avant multer (il
+ne verrait pas les fichiers). Les envois sur des routes `GET` ou `DELETE` sont ignorés.
+
 ## Générer
 
 ```ts title="scripts/generate-contract.ts"
@@ -84,7 +122,7 @@ console.log(report);
 ```
 
 L'application n'a besoin que de ses routes montées ; elle n'a pas besoin d'écouter.
-`discoverExpressContract(app, { config })` renvoie la description et le rapport (`undescribed`, `skipped`,
+`discoverExpressContract(app, { config })` renvoie la description et le rapport (`undescribed`, `skipped`, `warnings`,
 `conflicts`) sans générer de code.
 
 ## Express 5

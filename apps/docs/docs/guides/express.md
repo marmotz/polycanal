@@ -72,6 +72,44 @@ validateResponses(app, { onInvalid: process.env.NODE_ENV === 'production' ? 'log
 `onInvalid` is `'throw'` (default: logged and replaced by a 500 error), `'log'` (logged and sent anyway) or a function
 called with `{ route, issues, value }` before the response is sent.
 
+## File uploads
+
+A route behind multer takes a multipart body. Declare its file fields with file schemas (`z.file()`, or a list of them)
+in `endpoint({ input })`, and place `endpoint()` after multer:
+
+```ts
+import multer from 'multer';
+
+const upload = multer({ storage: multer.memoryStorage() });
+
+app.post(
+  '/listings',
+  upload.array('photos'),
+  endpoint({
+    input: { photos: z.array(z.file().mime(['image/jpeg'])), title: z.string(), price: z.number() },
+    output: ListingSchema,
+  }),
+  createListing,
+);
+```
+
+Discovery recognizes the multer middleware on the route and describes a multipart body (`body: 'multipart'` on the
+binding). File fields declared without multer on the route (multer mounted on the application) are described the same
+way.
+
+Before calling the handler, `endpoint()` validates:
+
+- the uploaded files (`req.file`, or `req.files` as a list or an object of lists), converted to web `File`s from memory
+  storage or opened from disk storage without being read whole;
+- the text fields of `req.body`, which multer always delivers as strings: each one is parsed as JSON when it fails as a
+  string (`"12.5"` passes `z.number()`, `"75001"` stays a string). `req.body` is replaced by the schemas' output.
+
+A failure answers `400` with `{ message, issues }`: `Invalid uploaded files` when a file is concerned, `Invalid
+multipart body` otherwise. The handler still reads the multer files from `req.file` / `req.files`.
+
+The report warns about multer without a declared file field, and about `endpoint()` placed before multer (it would not
+see the files). Uploads on `GET` or `DELETE` routes are skipped.
+
 ## Generating
 
 ```ts title="scripts/generate-contract.ts"
@@ -83,7 +121,7 @@ console.log(report);
 ```
 
 The application only needs its routes mounted; it does not need to listen. `discoverExpressContract(app, { config })`
-returns the description and the report (`undescribed`, `skipped`, `conflicts`) without generating code.
+returns the description and the report (`undescribed`, `skipped`, `warnings`, `conflicts`) without generating code.
 
 ## Express 5
 

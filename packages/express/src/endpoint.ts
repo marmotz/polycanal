@@ -1,4 +1,5 @@
 import type { FieldDescriptor, OperationMeta, StandardSchemaV1 } from '@polycanal/core';
+import { checkMultipart, type MultipartRequestLike, multipartPlan } from './multipart.js';
 import { checkResponses, type RequestLike, type ResponseLike } from './output.js';
 
 /** Input of an endpoint: a field map (like `input()`), or an object schema spread with the default rules. */
@@ -20,15 +21,24 @@ export interface EndpointOptions {
 
 const ENDPOINT = Symbol.for('polycanal.express.endpoint');
 
-type Middleware = (request: unknown, response: unknown, next: () => void) => void;
+type Middleware = (request: unknown, response: unknown, next: (error?: unknown) => void) => void;
+
+interface StatusResponse {
+  status(code: number): { json(body: unknown): unknown };
+}
 
 /**
  * Marks an Express route as part of the contract and attaches its schemas. It is a middleware, so it works with plain
  * Express and with decorator libraries that accept middlewares. It only calls `next()`, unless the application
  * validates its responses (`validateResponses(app)`): it then checks what the route answers with `res.json()`.
  *
+ * When the input declares file fields (`z.file()`), the route takes multipart bodies: placed after multer, the
+ * middleware validates the uploaded files (`req.file`, `req.files`) and the text fields of `req.body`, parsed as JSON
+ * when needed, and replaces `req.body` with the schemas' output. Invalid requests get a `400` `{ message, issues }`.
+ *
  * @example
  * app.post('/auth/login', endpoint({ input: LoginSchema, output: SessionSchema }), login);
+ * app.post('/avatar', upload.single('avatar'), endpoint({ input: { avatar: z.file() }, output: UserSchema }), save);
  *
  * // @reflet/express
  * @Post('/login')
@@ -36,9 +46,32 @@ type Middleware = (request: unknown, response: unknown, next: () => void) => voi
  * login(@Body() body: Login) {}
  */
 export function endpoint(options: EndpointOptions): Middleware {
+  let plan: ReturnType<typeof multipartPlan> | null = null;
+
   const middleware: Middleware = (request, response, next) => {
-    checkResponses(options.output, request as RequestLike, response as ResponseLike);
-    next();
+    plan ??= multipartPlan(options.input);
+
+    if (plan === undefined) {
+      checkResponses(options.output, request as RequestLike, response as ResponseLike);
+      next();
+
+      return;
+    }
+
+    const multipart = request as MultipartRequestLike;
+
+    checkMultipart(plan, multipart).then((result) => {
+      if ('error' in result) {
+        (response as StatusResponse).status(400).json(result.error);
+
+        return;
+      }
+
+      // Checked after the request, so that the `400` above is not taken for a response of the route
+      checkResponses(options.output, request as RequestLike, response as ResponseLike);
+      multipart.body = result.body;
+      next();
+    }, next);
   };
   (middleware as unknown as Record<symbol, EndpointOptions>)[ENDPOINT] = options;
 
