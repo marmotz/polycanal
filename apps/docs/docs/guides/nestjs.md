@@ -63,6 +63,39 @@ app.useGlobalInterceptors(
 
 Its `outputOf` option reads response schemas from a project decorator, like the discovery option.
 
+## File uploads
+
+Uploaded files are validated with file schemas (`z.file()`) through three pipes. Each one exposes its schema, so
+discovery describes the route as a multipart body (`body: 'multipart'` on the binding).
+
+```ts
+import { filePipe, filesPipe, multipartBodyPipe } from '@polycanal/nest';
+
+@Post('listings')
+@UseInterceptors(FilesInterceptor('photos'))
+@Endpoint({ output: ListingSchema })
+create(
+  @UploadedFiles(filesPipe(z.array(z.file().mime(['image/jpeg'])), { field: 'photos' })) photos: Express.Multer.File[],
+  @Body(multipartBodyPipe(z.object({ title: z.string(), price: z.number() }))) body: { title: string; price: number },
+) {}
+```
+
+| Pipe | For | Checks |
+|------|-----|--------|
+| `filePipe(schema, { field? })` | `@UploadedFile()` | The file, converted to a web `File` |
+| `filesPipe(schema, { field? })` | `@UploadedFiles()` | The list (`FilesInterceptor()`) or the object of lists (`FileFieldsInterceptor()`) |
+| `filesPipe({ cover, photos })` | `@UploadedFiles()` with `FileFieldsInterceptor()` | Each field; a field whose schema is not a list receives its single file |
+| `multipartBodyPipe(schema)` | `@Body()` | The text fields, each parsed as JSON when it fails as a string (`"12.5"` passes `z.number()`, `"75001"` stays a string) |
+
+Files are converted from memory storage or opened from disk storage without being read whole. The handler still
+receives the multer files unchanged, and the body pipe returns the schema's output. A failure answers `400` with
+`{ message, issues }`.
+
+The field names given to `FileInterceptor()` and its siblings cannot be read: pass them with the `field` option, or
+declare the field with `@Endpoint({ input })`. `filesPipe()` with a map of schemas, or with an object schema, names its
+fields by their keys. Without a name, the file is left out of the contract with a warning. A key given to
+`@UploadedFile('x')` is also read as the field name, but Nest then reads `req.x` instead of `req.file`.
+
 ## Generating
 
 Generate the contract with the [CLI](./cli.md), from a `polycanal.config.ts` whose source is `nestSource()`:
@@ -85,6 +118,8 @@ whole root `body` field.
   becomes a root `body` field.
 - `@Param('x')`, `@Query('x')`, `@Headers('x')`: one field each, with the pipe's schema, or described as a string
   without pipe (with a warning, except for path parameters, which are strings by nature).
+- `@UploadedFile()` and `@UploadedFiles()`: body fields named as described in [File uploads](#file-uploads), and a
+  multipart binding. Such a route must use `POST`, `PUT` or `PATCH`, otherwise it is skipped.
 - Path parameters the handler does not read are still described.
 - A name used by two sources keeps it for the path and is prefixed for the other (`bodyUserId`, sent as `userId`).
 

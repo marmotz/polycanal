@@ -64,6 +64,39 @@ app.useGlobalInterceptors(
 
 Son option `outputOf` lit les schémas de réponse depuis un décorateur du projet, comme l'option de découverte.
 
+## Envoi de fichiers
+
+Les fichiers envoyés se valident avec des schémas de fichier (`z.file()`) par trois pipes. Chacun expose son schéma :
+la découverte décrit alors la route avec un corps multipart (`body: 'multipart'` sur le binding).
+
+```ts
+import { filePipe, filesPipe, multipartBodyPipe } from '@polycanal/nest';
+
+@Post('listings')
+@UseInterceptors(FilesInterceptor('photos'))
+@Endpoint({ output: ListingSchema })
+create(
+  @UploadedFiles(filesPipe(z.array(z.file().mime(['image/jpeg'])), { field: 'photos' })) photos: Express.Multer.File[],
+  @Body(multipartBodyPipe(z.object({ title: z.string(), price: z.number() }))) body: { title: string; price: number },
+) {}
+```
+
+| Pipe | Pour | Vérifie |
+|------|------|---------|
+| `filePipe(schema, { field? })` | `@UploadedFile()` | Le fichier, converti en `File` web |
+| `filesPipe(schema, { field? })` | `@UploadedFiles()` | La liste (`FilesInterceptor()`) ou l'objet de listes (`FileFieldsInterceptor()`) |
+| `filesPipe({ cover, photos })` | `@UploadedFiles()` avec `FileFieldsInterceptor()` | Chaque champ ; un champ dont le schéma n'est pas une liste reçoit son fichier seul |
+| `multipartBodyPipe(schema)` | `@Body()` | Les champs texte, chacun parsé en JSON quand il échoue en chaîne (`"12.5"` passe `z.number()`, `"75001"` reste une chaîne) |
+
+Les fichiers sont convertis depuis le stockage mémoire, ou ouverts depuis le stockage disque sans être lus en entier.
+Le handler reçoit toujours les fichiers multer inchangés, et le pipe du body renvoie la sortie du schéma. Un échec
+répond `400` avec `{ message, issues }`.
+
+Les noms de champs passés à `FileInterceptor()` et à ses variantes sont illisibles : donnez-les avec l'option `field`,
+ou déclarez le champ avec `@Endpoint({ input })`. `filesPipe()` avec une map de schémas, ou avec un schéma objet, nomme
+ses champs par leurs clés. Sans nom, le fichier est laissé hors du contrat avec un avertissement. Une clé passée à
+`@UploadedFile('x')` sert aussi de nom de champ, mais Nest lit alors `req.x` au lieu de `req.file`.
+
 ## Générer
 
 Générez le contrat avec la [CLI](./cli.md), depuis un `polycanal.config.ts` dont la source est `nestSource()` :
@@ -86,6 +119,9 @@ personnalisés ; leur option `resolveSchema` est celle qu'utilise la CLI pour im
   pas un objet devient un champ racine `body`.
 - `@Param('x')`, `@Query('x')`, `@Headers('x')` : un champ chacun, avec le schéma du pipe, ou décrit comme une chaîne
   sans pipe (avec un avertissement, sauf pour les paramètres de chemin, qui sont des chaînes par nature).
+- `@UploadedFile()` et `@UploadedFiles()` : des champs body nommés comme décrit dans
+  [envoi de fichiers](#envoi-de-fichiers), et un binding multipart. Une telle route doit utiliser `POST`, `PUT` ou `PATCH`,
+  sinon elle est ignorée.
 - Les paramètres de chemin que le handler ne lit pas sont décrits quand même.
 - Un nom utilisé par deux sources le garde pour le chemin et prend un préfixe pour l'autre (`bodyUserId`, envoyé comme
   `userId`).

@@ -14,6 +14,7 @@ import {
 import { type ContractTree, isStandardSchema, type JsonSchema, type StandardSchemaV1 } from '@polycanal/core';
 import { type HttpMethod, rest } from '@polycanal/rest';
 import { type EndpointOptions, endpointNamespace, endpointOptions } from './decorators.js';
+import { FILES_PIPE, type FilePipe, type FilesPipe } from './files.js';
 
 // Nest metadata keys and enums (@nestjs/common constants), stable across Nest 10 to 12
 const PATH_METADATA = 'path';
@@ -27,7 +28,7 @@ const REQUEST_METHODS: Readonly<Record<number, HttpMethod>> = {
   3: 'DELETE',
   4: 'PATCH',
 };
-const PARAM_TYPES = { BODY: 3, QUERY: 4, PARAM: 5, HEADERS: 6 } as const;
+const PARAM_TYPES = { BODY: 3, QUERY: 4, PARAM: 5, HEADERS: 6, FILE: 8, FILES: 9 } as const;
 
 type Constructor = abstract new (...args: never[]) => unknown;
 
@@ -273,10 +274,20 @@ function describeRoute(
   }
 
   const fields = new FieldSet();
+  // Uploaded files without a field name: described only when `@Endpoint({ input })` declares a file field
+  const unnamed: string[] = [];
+  let multipart = false;
   const args = (Reflect.getMetadata(ROUTE_ARGS_METADATA, controller, handler) ?? {}) as Record<string, RouteArgument>;
 
   // Path parameters first, so that they keep their name when a body or query field has the same one
-  const order = [PARAM_TYPES.PARAM, PARAM_TYPES.HEADERS, PARAM_TYPES.QUERY, PARAM_TYPES.BODY] as number[];
+  const order = [
+    PARAM_TYPES.PARAM,
+    PARAM_TYPES.HEADERS,
+    PARAM_TYPES.QUERY,
+    PARAM_TYPES.BODY,
+    PARAM_TYPES.FILE,
+    PARAM_TYPES.FILES,
+  ] as number[];
   const sorted = Object.entries(args)
     .map(([key, argument]) => ({ type: Number(key.split(':')[0]), argument }))
     .sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type) || a.argument.index - b.argument.index);
@@ -303,6 +314,20 @@ function describeRoute(
           fields.add(field(data.toLowerCase(), 'header', schema ?? { type: 'string' }, false, schema === undefined));
         }
         break;
+      case PARAM_TYPES.FILE:
+      case PARAM_TYPES.FILES:
+        multipart = true;
+        addFileFields(
+          fields,
+          type === PARAM_TYPES.FILE ? 'file' : 'files',
+          argument,
+          data,
+          schema,
+          label,
+          unnamed,
+          context,
+        );
+        break;
     }
   }
 
@@ -323,6 +348,18 @@ function describeRoute(
     });
   }
 
+  if (unnamed.length > 0 && !Object.values(decorated.input ?? {}).some((override) => declaresFile(override, label))) {
+    for (const decorator of unnamed) {
+      context.warnings.push(
+        `${label}: ${decorator} without field name, not described (use filePipe(schema, { field }), filesPipe(schema, { field }) or @Endpoint({ input }))`,
+      );
+    }
+  }
+
+  if (multipart && (method === 'GET' || method === 'DELETE')) {
+    throw new Skip('uploaded files need a POST, PUT or PATCH route');
+  }
+
   for (const name of fields.raw) {
     context.warnings.push(`${label}: "${name}" has no runtime schema, described as a string`);
   }
@@ -334,10 +371,10 @@ function describeRoute(
   return {
     family: 'action',
     path: [...namespaceOf(controller, decorated, context.controllerPaths), decorated.name ?? handler],
-    binding: rest[method.toLowerCase() as Lowercase<HttpMethod>](
-      route.path,
-      httpCode === undefined ? {} : { status: httpCode },
-    ),
+    binding: rest[method.toLowerCase() as Lowercase<HttpMethod>](route.path, {
+      ...(httpCode === undefined ? {} : { status: httpCode }),
+      ...(multipart ? { body: 'multipart' as const } : {}),
+    }),
     ...(all.length === 0 ? {} : { input: { kind: 'fields', fields: all } }),
     output: context.describe(output, 'output', `${label} output`),
     ...(errors.length === 0
@@ -427,6 +464,113 @@ function addSpreadOrField(
     context.inherit(property, json);
     fields.add({ name, source, schema: property, required: required.has(name), raw: false });
   }
+}
+
+/**
+ * Fields of `@UploadedFile()` / `@UploadedFiles()`. The field names given to `FileInterceptor()` and its siblings are
+ * kept in a closure, out of reach: they come from the `@UploadedFile()` key, the `field` option of the pipe, or the
+ * keys of the schemas (`filesPipe({ cover, photos })`, an object schema).
+ */
+function addFileFields(
+  fields: FieldSet,
+  kind: 'file' | 'files',
+  argument: RouteArgument,
+  data: string | undefined,
+  schema: StandardSchemaV1 | undefined,
+  label: string,
+  unnamed: string[],
+  context: DescribeContext,
+): void {
+  const pipe = (argument.pipes ?? []).find(isFilesPipe);
+  const decorator = kind === 'file' ? '@UploadedFile()' : '@UploadedFiles()';
+  const add = (name: string, fieldSchema: StandardSchemaV1 | JsonSchema | undefined, required?: boolean) => {
+    if (fieldSchema === undefined) {
+      fields.add({ name, source: 'body', schema: { type: 'string', format: 'binary' }, required: true, raw: false });
+      context.warnings.push(`${label}: "${name}" has no runtime schema, described as a file`);
+
+      return;
+    }
+
+    const json = isStandardSchema(fieldSchema)
+      ? context.describe(fieldSchema, 'input', `${label} file "${name}"`)
+      : fieldSchema;
+    fields.add({
+      name,
+      source: 'body',
+      schema: json,
+      required: required ?? (isStandardSchema(fieldSchema) ? !acceptsUndefined(fieldSchema) : true),
+      raw: false,
+    });
+  };
+
+  if (kind === 'files' && pipe?.[FILES_PIPE] === 'files' && pipe.fields !== undefined) {
+    for (const [name, fieldSchema] of Object.entries(pipe.fields)) {
+      add(name, fieldSchema);
+    }
+
+    return;
+  }
+
+  const name = (kind === 'file' ? data : undefined) ?? pipe?.field;
+
+  if (name !== undefined) {
+    add(name, schema);
+
+    return;
+  }
+
+  // `FileFieldsInterceptor()` validated with an object schema: one field per property
+  if (kind === 'files' && schema !== undefined) {
+    const json = context.describe(schema, 'input', `${label} files`);
+    const object = typeof json === 'object' && json.type === 'object' ? json : undefined;
+    const properties = object?.properties as Record<string, JsonSchema> | undefined;
+
+    if (object !== undefined && properties !== undefined) {
+      const required = new Set(Array.isArray(object.required) ? (object.required as string[]) : []);
+
+      for (const [property, propertySchema] of Object.entries(properties)) {
+        context.inherit(propertySchema, json);
+        add(property, propertySchema, required.has(property));
+      }
+
+      return;
+    }
+  }
+
+  unnamed.push(decorator);
+}
+
+function isFilesPipe(pipe: unknown): pipe is FilePipe | FilesPipe {
+  return typeof pipe === 'object' && pipe !== null && FILES_PIPE in pipe;
+}
+
+/** Whether an `@Endpoint({ input })` override declares a file field (a file, or a list of files). */
+function declaresFile(override: StandardSchemaV1 | { readonly schema: StandardSchemaV1 }, label: string): boolean {
+  const schema = isStandardSchema(override) ? override : override.schema;
+
+  try {
+    return isFileJson(describeSchema(schema, 'input', label));
+  } catch {
+    return false;
+  }
+}
+
+function isFileJson(json: JsonSchema): boolean {
+  if (typeof json !== 'object') {
+    return false;
+  }
+
+  if (json.format === 'binary') {
+    return true;
+  }
+
+  if (json.items !== undefined && isFileJson(json.items as JsonSchema)) {
+    return true;
+  }
+
+  const variants = [...(Array.isArray(json.anyOf) ? json.anyOf : []), ...(Array.isArray(json.oneOf) ? json.oneOf : [])];
+
+  return variants.some((variant) => isFileJson(variant as JsonSchema));
 }
 
 interface PendingField extends Omit<FieldDescription, 'alias'> {

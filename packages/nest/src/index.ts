@@ -15,6 +15,16 @@ export {
   type NestDiscoveryReport,
   type NestRoute,
 } from './discover.js';
+export {
+  type FileFieldSchemas,
+  type FilePipe,
+  type FilePipeOptions,
+  type FilesPipe,
+  filePipe,
+  filesPipe,
+  type MultipartBodyPipe,
+  multipartBodyPipe,
+} from './files.js';
 export { type GenerateNestContractOptions, generateNestContract } from './generate.js';
 export { EndpointOutputInterceptor, type EndpointOutputOptions, type InvalidResponse } from './output.js';
 export { type NestSourceOptions, nestSource } from './source.js';
